@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/machine_model.dart';
-import '../../services/data_service_mock.dart';
+import '../../services/data_service.dart';
 
 class ManageMachinesScreen extends StatefulWidget {
   @override
@@ -9,7 +9,7 @@ class ManageMachinesScreen extends StatefulWidget {
 }
 
 class _ManageMachinesScreenState extends State<ManageMachinesScreen> {
-  List<Machine> _machines = [];
+  List<MachineModel> _machines = [];
   bool _isLoading = true;
 
   @override
@@ -75,7 +75,7 @@ class _ManageMachinesScreenState extends State<ManageMachinesScreen> {
     );
 
     if (result == true) {
-      final machine = Machine(
+      final machine = MachineModel(
         id: 'm_${DateTime.now().millisecondsSinceEpoch}',
         name: nameController.text,
         location: locationController.text,
@@ -86,14 +86,14 @@ class _ManageMachinesScreenState extends State<ManageMachinesScreen> {
       _loadMachines();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Mesin berhasil ditambahkan')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Mesin berhasil ditambahkan')));
       }
     }
   }
 
-  Future<void> _showEditDialog(Machine machine) async {
+  Future<void> _showEditDialog(MachineModel machine) async {
     final nameController = TextEditingController(text: machine.name);
     final locationController = TextEditingController(text: machine.location);
 
@@ -135,25 +135,25 @@ class _ManageMachinesScreenState extends State<ManageMachinesScreen> {
     );
 
     if (result == true) {
-      final updatedMachine = Machine(
+      final updatedMachine = MachineModel(
         id: machine.id,
         name: nameController.text,
         location: locationController.text,
       );
 
       final dataService = Provider.of<DataService>(context, listen: false);
-      await dataService.updateMachine(machine.id, updatedMachine);
+      await dataService.updateMachine(updatedMachine);
       _loadMachines();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Mesin berhasil diupdate')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Mesin berhasil diupdate')));
       }
     }
   }
 
-  Future<void> _deleteMachine(Machine machine) async {
+  Future<void> _deleteMachine(MachineModel machine) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -174,13 +174,13 @@ class _ManageMachinesScreenState extends State<ManageMachinesScreen> {
 
     if (confirm == true) {
       final dataService = Provider.of<DataService>(context, listen: false);
-      await dataService.deleteMachine(machine.id);
+      await dataService.deleteMachine(machine);
       _loadMachines();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Mesin berhasil dinonaktifkan')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Mesin berhasil dinonaktifkan')));
       }
     }
   }
@@ -188,9 +188,7 @@ class _ManageMachinesScreenState extends State<ManageMachinesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Kelola Mesin'),
-      ),
+      appBar: AppBar(title: Text('Kelola Mesin')),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddDialog,
         child: Icon(Icons.add),
@@ -198,42 +196,40 @@ class _ManageMachinesScreenState extends State<ManageMachinesScreen> {
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : _machines.isEmpty
-              ? Center(
-                  child: Text('Belum ada mesin terdaftar'),
-                )
-              : ListView.builder(
-                  padding: EdgeInsets.all(16),
-                  itemCount: _machines.length,
-                  itemBuilder: (context, index) {
-                    final machine = _machines[index];
-                    return Card(
-                      margin: EdgeInsets.only(bottom: 12),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          child: Icon(Icons.precision_manufacturing),
+          ? Center(child: Text('Belum ada mesin terdaftar'))
+          : ListView.builder(
+              padding: EdgeInsets.all(16),
+              itemCount: _machines.length,
+              itemBuilder: (context, index) {
+                final machine = _machines[index];
+                return Card(
+                  margin: EdgeInsets.only(bottom: 12),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      child: Icon(Icons.precision_manufacturing),
+                    ),
+                    title: Text(
+                      machine.name,
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(machine.location),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.edit, color: Colors.blue),
+                          onPressed: () => _showEditDialog(machine),
                         ),
-                        title: Text(
-                          machine.name,
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                        IconButton(
+                          icon: Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => _deleteMachine(machine),
                         ),
-                        subtitle: Text(machine.location),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: Icon(Icons.edit, color: Colors.blue),
-                              onPressed: () => _showEditDialog(machine),
-                            ),
-                            IconButton(
-                              icon: Icon(Icons.delete, color: Colors.red),
-                              onPressed: () => _deleteMachine(machine),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
     );
   }
 }

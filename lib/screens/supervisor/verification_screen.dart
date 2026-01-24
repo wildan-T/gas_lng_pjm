@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../models/gas_record_model.dart';
-import '../../services/auth_service_mock.dart';
-import '../../services/data_service_mock.dart';
+import '../../services/auth_service.dart';
+import '../../services/data_service.dart';
 import 'dart:convert';
 
 class VerificationScreen extends StatefulWidget {
@@ -36,7 +36,9 @@ class _VerificationScreenState extends State<VerificationScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Verifikasi Data'),
-        content: Text('Apakah data ini sudah benar?\n\nMesin: ${record.machineName}\nJumlah: ${record.amount} m³'),
+        content: Text(
+          'Apakah data ini sudah benar?\n\nMesin: ${record.machineName}\nJumlah: ${record.amount} m³',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -51,7 +53,10 @@ class _VerificationScreenState extends State<VerificationScreen> {
     );
 
     if (confirm == true) {
-      final user = Provider.of<AuthService>(context, listen: false).currentUser!;
+      final user = Provider.of<AuthService>(
+        context,
+        listen: false,
+      ).currentUser!;
       final dataService = Provider.of<DataService>(context, listen: false);
       await dataService.verifyRecord(record.id, user.uid, user.name);
       _loadUnverifiedRecords();
@@ -69,39 +74,41 @@ class _VerificationScreenState extends State<VerificationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Verifikasi Data'),
-      ),
+      appBar: AppBar(title: Text('Verifikasi Data')),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : _unverifiedRecords.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.check_circle_outline, size: 80, color: Colors.green),
-                      SizedBox(height: 16),
-                      Text(
-                        'Semua data sudah diverifikasi!',
-                        style: TextStyle(fontSize: 16, color: Colors.grey),
-                      ),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.check_circle_outline,
+                    size: 80,
+                    color: Colors.green,
                   ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _loadUnverifiedRecords,
-                  child: ListView.builder(
-                    padding: EdgeInsets.all(16),
-                    itemCount: _unverifiedRecords.length,
-                    itemBuilder: (context, index) {
-                      final record = _unverifiedRecords[index];
-                      return _VerificationCard(
-                        record: record,
-                        onVerify: () => _verifyRecord(record),
-                      );
-                    },
+                  SizedBox(height: 16),
+                  Text(
+                    'Semua data sudah diverifikasi!',
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
                   ),
-                ),
+                ],
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _loadUnverifiedRecords,
+              child: ListView.builder(
+                padding: EdgeInsets.all(16),
+                itemCount: _unverifiedRecords.length,
+                itemBuilder: (context, index) {
+                  final record = _unverifiedRecords[index];
+                  return _VerificationCard(
+                    record: record,
+                    onVerify: () => _verifyRecord(record),
+                  );
+                },
+              ),
+            ),
     );
   }
 }
@@ -192,7 +199,10 @@ class _VerificationCard extends StatelessWidget {
                   children: [
                     Text(
                       'Catatan:',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
                     ),
                     SizedBox(height: 4),
                     Text(record.notes!),

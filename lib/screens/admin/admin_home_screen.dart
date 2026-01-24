@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:gas_lng_pjm/screens/admin/manage_users_screen.dart';
 import 'package:provider/provider.dart';
-import '../../services/auth_service_mock.dart';
+import '../../services/auth_service.dart';
 import 'manage_machines_screen.dart';
 import 'manage_gas_price_screen.dart';
 import 'settings_screen.dart'; // ← NEW IMPORT
@@ -9,7 +10,12 @@ import '../management/management_dashboard.dart';
 class AdminHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final user = Provider.of<AuthService>(context).currentUser!;
+    final auth = context.watch<AuthService?>();
+
+    final user = auth?.currentUser;
+    if (user == null) {
+      return const SizedBox(); // atau Loading / Redirect
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -109,8 +115,9 @@ class AdminHomeScreen extends StatelessWidget {
                     icon: Icons.people,
                     color: Colors.orange,
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Fitur dalam pengembangan')),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => ManageUsersScreen()),
                       );
                     },
                   ),

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:gas_lng_pjm/services/auth_service_mock.dart';
+import 'package:gas_lng_pjm/services/auth_service.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import '../../services/data_service_mock.dart';
+import '../../services/data_service.dart';
 import '../supervisor/export_report_screen.dart';
 
 class ManagementDashboard extends StatefulWidget {
@@ -28,7 +28,7 @@ class _ManagementDashboardState extends State<ManagementDashboard> {
   Future<void> _loadSummary() async {
     setState(() => _isLoading = true);
     final dataService = Provider.of<DataService>(context, listen: false);
-    final summary = await dataService.getMonthlySummary(_selectedYear, _selectedMonth);
+    final summary = await dataService.getSummary();
     setState(() {
       _summary = summary;
       _isLoading = false;
@@ -41,10 +41,7 @@ class _ManagementDashboardState extends State<ManagementDashboard> {
       appBar: AppBar(
         title: Text('Dashboard Manajemen'),
         actions: [
-          IconButton(
-            icon: Icon(Icons.calendar_month),
-            onPressed: _selectMonth,
-          ),
+          IconButton(icon: Icon(Icons.calendar_month), onPressed: _selectMonth),
           IconButton(
             icon: Icon(Icons.logout),
             onPressed: () async {
@@ -87,7 +84,9 @@ class _ManagementDashboardState extends State<ManagementDashboard> {
   }
 
   Widget _buildPeriodCard() {
-    final monthName = DateFormat.MMMM('id_ID').format(DateTime(_selectedYear, _selectedMonth));
+    final monthName = DateFormat.MMMM(
+      'id_ID',
+    ).format(DateTime(_selectedYear, _selectedMonth));
     return Card(
       color: Colors.blue.shade50,
       child: Padding(
@@ -174,22 +173,19 @@ class _ManagementDashboardState extends State<ManagementDashboard> {
 
   Widget _buildMonthlyChart() {
     final dailyData = _summary!['dailyConsumption'] as Map<int, double>;
-    
+
     if (dailyData.isEmpty) {
       return Card(
         child: Padding(
           padding: EdgeInsets.all(16),
-          child: Center(
-            child: Text('Tidak ada data untuk ditampilkan'),
-          ),
+          child: Center(child: Text('Tidak ada data untuk ditampilkan')),
         ),
       );
     }
 
-    final spots = dailyData.entries
-        .map((e) => FlSpot(e.key.toDouble(), e.value))
-        .toList()
-      ..sort((a, b) => a.x.compareTo(b.x));
+    final spots =
+        dailyData.entries.map((e) => FlSpot(e.key.toDouble(), e.value)).toList()
+          ..sort((a, b) => a.x.compareTo(b.x));
 
     return Card(
       child: Padding(
@@ -206,10 +202,7 @@ class _ManagementDashboardState extends State<ManagementDashboard> {
               height: 220,
               child: LineChart(
                 LineChartData(
-                  gridData: FlGridData(
-                    show: true,
-                    drawVerticalLine: false,
-                  ),
+                  gridData: FlGridData(show: true, drawVerticalLine: false),
                   titlesData: FlTitlesData(
                     leftTitles: AxisTitles(
                       sideTitles: SideTitles(
@@ -274,14 +267,12 @@ class _ManagementDashboardState extends State<ManagementDashboard> {
 
   Widget _buildMachineChart() {
     final machineData = _summary!['machineConsumption'] as Map<String, double>;
-    
+
     if (machineData.isEmpty) {
       return Card(
         child: Padding(
           padding: EdgeInsets.all(16),
-          child: Center(
-            child: Text('Tidak ada data mesin'),
-          ),
+          child: Center(child: Text('Tidak ada data mesin')),
         ),
       );
     }
@@ -302,11 +293,9 @@ class _ManagementDashboardState extends State<ManagementDashboard> {
               child: BarChart(
                 BarChartData(
                   alignment: BarChartAlignment.spaceAround,
-                  barGroups: machineData.entries
-                      .toList()
-                      .asMap()
-                      .entries
-                      .map((entry) {
+                  barGroups: machineData.entries.toList().asMap().entries.map((
+                    entry,
+                  ) {
                     final index = entry.key;
                     final data = entry.value;
                     return BarChartGroupData(
@@ -314,7 +303,8 @@ class _ManagementDashboardState extends State<ManagementDashboard> {
                       barRods: [
                         BarChartRodData(
                           toY: data.value,
-                          color: Colors.primaries[index % Colors.primaries.length],
+                          color:
+                              Colors.primaries[index % Colors.primaries.length],
                           width: 40,
                           borderRadius: BorderRadius.circular(4),
                         ),

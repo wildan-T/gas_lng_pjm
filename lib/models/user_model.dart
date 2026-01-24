@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 enum UserRole { operator, supervisor, admin, management }
 
 class UserModel {
@@ -15,15 +17,21 @@ class UserModel {
     this.isActive = true,
   });
 
-  factory UserModel.fromFirestore(Map<String, dynamic> data, String uid) {
+  // PERBAIKAN 1: Menerima DocumentSnapshot agar konsisten dengan model lain
+  factory UserModel.fromFirestore(DocumentSnapshot doc) {
+    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+
     return UserModel(
-      uid: uid,
+      uid: doc.id, // UID otomatis diambil dari ID dokumen
       name: data['name'] ?? '',
       email: data['email'] ?? '',
+
+      // PERBAIKAN 2: Menggunakan cara modern parsing Enum (lebih aman)
       role: UserRole.values.firstWhere(
-        (e) => e.toString() == 'UserRole.${data['role']}',
-        orElse: () => UserRole.operator,
+        (e) => e.name == data['role'], // Membandingkan "admin" == "admin"
+        orElse: () => UserRole.operator, // Default jika error/kosong
       ),
+
       isActive: data['isActive'] ?? true,
     );
   }
@@ -32,7 +40,8 @@ class UserModel {
     return {
       'name': name,
       'email': email,
-      'role': role.toString().split('.').last,
+      'role': role
+          .name, // Modern: langsung menghasilkan string "admin", "operator", dll
       'isActive': isActive,
     };
   }

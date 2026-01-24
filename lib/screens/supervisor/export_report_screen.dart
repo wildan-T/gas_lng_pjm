@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:open_file/open_file.dart';
-import '../../services/data_service_mock.dart';
+import '../../services/data_service.dart';
 import '../../services/export_service.dart';
 
 class ExportReportScreen extends StatefulWidget {
@@ -24,10 +24,13 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
 
     try {
       final dataService = Provider.of<DataService>(context, listen: false);
-      
+
       // Get summary
-      final summary = await dataService.getMonthlySummary(_selectedYear, _selectedMonth);
-      
+      final summary = await dataService.getMonthlySummary(
+        _selectedYear,
+        _selectedMonth,
+      );
+
       // Validate data
       if (summary['recordCount'] == 0) {
         if (mounted) {
@@ -41,19 +44,30 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
         }
         return;
       }
-      
+
       // Get all verified records for the month
       final allRecords = await dataService.getGasRecords();
       final startDate = DateTime(_selectedYear, _selectedMonth, 1);
-      final endDate = DateTime(_selectedYear, _selectedMonth + 1, 0, 23, 59, 59);
-      
-      final monthRecords = allRecords.where((r) =>
-          r.timestamp.isAfter(startDate) &&
-          r.timestamp.isBefore(endDate) &&
-          r.isVerified).toList();
+      final endDate = DateTime(
+        _selectedYear,
+        _selectedMonth + 1,
+        0,
+        23,
+        59,
+        59,
+      );
+
+      final monthRecords = allRecords
+          .where(
+            (r) =>
+                r.timestamp.isAfter(startDate) &&
+                r.timestamp.isBefore(endDate) &&
+                r.isVerified,
+          )
+          .toList();
 
       File exportedFile;
-      
+
       if (_exportFormat == 'PDF') {
         exportedFile = await ExportService.generateMonthlyReportPDF(
           year: _selectedYear,
@@ -72,7 +86,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
 
       if (mounted) {
         setState(() => _isExporting = false);
-        
+
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
@@ -106,10 +120,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
       if (mounted) {
         setState(() => _isExporting = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -117,12 +128,12 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final monthName = DateFormat.MMMM('id_ID').format(DateTime(_selectedYear, _selectedMonth));
+    final monthName = DateFormat.MMMM(
+      'id_ID',
+    ).format(DateTime(_selectedYear, _selectedMonth));
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Export Laporan'),
-      ),
+      appBar: AppBar(title: Text('Export Laporan')),
       body: Padding(
         padding: EdgeInsets.all(16),
         child: Column(
@@ -136,7 +147,10 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                   children: [
                     Text(
                       'Pilih Periode Laporan',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     SizedBox(height: 16),
                     InkWell(
@@ -181,7 +195,10 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                   children: [
                     Text(
                       'Format Export',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     SizedBox(height: 16),
                     Row(
@@ -192,9 +209,13 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                             child: Container(
                               padding: EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: _exportFormat == 'PDF' ? Colors.blue.shade50 : Colors.white,
+                                color: _exportFormat == 'PDF'
+                                    ? Colors.blue.shade50
+                                    : Colors.white,
                                 border: Border.all(
-                                  color: _exportFormat == 'PDF' ? Colors.blue : Colors.grey,
+                                  color: _exportFormat == 'PDF'
+                                      ? Colors.blue
+                                      : Colors.grey,
                                   width: _exportFormat == 'PDF' ? 2 : 1,
                                 ),
                                 borderRadius: BorderRadius.circular(8),
@@ -204,7 +225,9 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                                   Icon(
                                     Icons.picture_as_pdf,
                                     size: 48,
-                                    color: _exportFormat == 'PDF' ? Colors.blue : Colors.grey,
+                                    color: _exportFormat == 'PDF'
+                                        ? Colors.blue
+                                        : Colors.grey,
                                   ),
                                   SizedBox(height: 8),
                                   Text(
@@ -223,13 +246,18 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                         SizedBox(width: 16),
                         Expanded(
                           child: InkWell(
-                            onTap: () => setState(() => _exportFormat = 'Excel'),
+                            onTap: () =>
+                                setState(() => _exportFormat = 'Excel'),
                             child: Container(
                               padding: EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: _exportFormat == 'Excel' ? Colors.green.shade50 : Colors.white,
+                                color: _exportFormat == 'Excel'
+                                    ? Colors.green.shade50
+                                    : Colors.white,
                                 border: Border.all(
-                                  color: _exportFormat == 'Excel' ? Colors.green : Colors.grey,
+                                  color: _exportFormat == 'Excel'
+                                      ? Colors.green
+                                      : Colors.grey,
                                   width: _exportFormat == 'Excel' ? 2 : 1,
                                 ),
                                 borderRadius: BorderRadius.circular(8),
@@ -239,7 +267,9 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                                   Icon(
                                     Icons.table_chart,
                                     size: 48,
-                                    color: _exportFormat == 'Excel' ? Colors.green : Colors.grey,
+                                    color: _exportFormat == 'Excel'
+                                        ? Colors.green
+                                        : Colors.grey,
                                   ),
                                   SizedBox(height: 8),
                                   Text(

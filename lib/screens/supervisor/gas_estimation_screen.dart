@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../../services/data_service_mock.dart';
+import '../../services/data_service.dart';
 import '../../models/forecast_model.dart';
 import 'forecast_input_screen.dart';
 
@@ -13,10 +13,7 @@ class GasEstimationScreen extends StatefulWidget {
 }
 
 class _GasEstimationScreenState extends State<GasEstimationScreen> {
-  DateTime _selectedDate = DateTime(
-    DateTime.now().year,
-    DateTime.now().month,
-  );
+  DateTime _selectedDate = DateTime(DateTime.now().year, DateTime.now().month);
 
   @override
   Widget build(BuildContext context) {
@@ -30,9 +27,7 @@ class _GasEstimationScreenState extends State<GasEstimationScreen> {
             onPressed: () async {
               await Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => ForecastInputScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => ForecastInputScreen()),
               );
               setState(() {}); // Refresh
             },
@@ -87,17 +82,19 @@ class _GasEstimationScreenState extends State<GasEstimationScreen> {
               ],
             ),
           ),
-          
+
           // Content
           Expanded(
             child: FutureBuilder<GasEstimation?>(
-              future: Provider.of<DataService>(context, listen: false)
-                  .getGasEstimation(_selectedDate.year, _selectedDate.month),
+              future: Provider.of<DataService>(
+                context,
+                listen: false,
+              ).getGasEstimation(_selectedDate.year, _selectedDate.month),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(child: CircularProgressIndicator());
                 }
-                
+
                 if (snapshot.hasError) {
                   return Center(
                     child: Column(
@@ -110,13 +107,13 @@ class _GasEstimationScreenState extends State<GasEstimationScreen> {
                     ),
                   );
                 }
-                
+
                 final estimation = snapshot.data;
-                
+
                 if (estimation == null) {
                   return _buildEmptyState();
                 }
-                
+
                 return _buildEstimationContent(estimation);
               },
             ),
@@ -151,10 +148,7 @@ class _GasEstimationScreenState extends State<GasEstimationScreen> {
             Text(
               'Silakan input forecast produksi untuk\nmelihat estimasi kebutuhan gas',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade600,
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
             ),
             SizedBox(height: 24),
             ElevatedButton.icon(
@@ -223,18 +217,15 @@ class _GasEstimationScreenState extends State<GasEstimationScreen> {
                 SizedBox(height: 4),
                 Text(
                   'Target produksi bulan ini',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
               ],
             ),
           ),
         ),
-        
+
         SizedBox(height: 16),
-        
+
         // Estimation Results
         Card(
           elevation: 2,
@@ -258,15 +249,12 @@ class _GasEstimationScreenState extends State<GasEstimationScreen> {
                   ],
                 ),
                 Divider(height: 24),
-                
+
                 // Estimated Gas
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Volume Gas:',
-                      style: TextStyle(fontSize: 14),
-                    ),
+                    Text('Volume Gas:', style: TextStyle(fontSize: 14)),
                     Text(
                       '${numberFormat.format(estimation.estimatedGas)} m³',
                       style: TextStyle(
@@ -277,17 +265,14 @@ class _GasEstimationScreenState extends State<GasEstimationScreen> {
                     ),
                   ],
                 ),
-                
+
                 SizedBox(height: 12),
-                
+
                 // Estimated Cost
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Estimasi Biaya:',
-                      style: TextStyle(fontSize: 14),
-                    ),
+                    Text('Estimasi Biaya:', style: TextStyle(fontSize: 14)),
                     Text(
                       currencyFormat.format(estimation.estimatedCost),
                       style: TextStyle(
@@ -302,9 +287,9 @@ class _GasEstimationScreenState extends State<GasEstimationScreen> {
             ),
           ),
         ),
-        
+
         SizedBox(height: 16),
-        
+
         // Calculation Details
         Card(
           elevation: 2,
@@ -327,7 +312,7 @@ class _GasEstimationScreenState extends State<GasEstimationScreen> {
                   ],
                 ),
                 Divider(height: 24),
-                
+
                 _buildDetailRow(
                   'Rata-rata Gas Historis',
                   '${numberFormat.format(estimation.historicalAvgGas)} m³',
@@ -338,7 +323,7 @@ class _GasEstimationScreenState extends State<GasEstimationScreen> {
                   currencyFormat.format(estimation.gasPricePerM3),
                 ),
                 SizedBox(height: 16),
-                
+
                 Container(
                   padding: EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -372,9 +357,9 @@ class _GasEstimationScreenState extends State<GasEstimationScreen> {
             ),
           ),
         ),
-        
+
         SizedBox(height: 16),
-        
+
         // Notes
         Container(
           padding: EdgeInsets.all(12),
@@ -411,10 +396,7 @@ class _GasEstimationScreenState extends State<GasEstimationScreen> {
         ),
         Text(
           value,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         ),
       ],
     );

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../../services/data_service_mock.dart';
-import '../../models/forecast_model.dart';
+import '../../services/data_service.dart';
+import '../../services/auth_service.dart'; // Tambahkan import Auth
+import '../../models/forecast_model.dart'; // Pastikan ini mengarah ke file yang berisi class ForecastOrder
 
 class ForecastInputScreen extends StatefulWidget {
   const ForecastInputScreen({Key? key}) : super(key: key);
@@ -15,14 +16,16 @@ class _ForecastInputScreenState extends State<ForecastInputScreen> {
   final _formKey = GlobalKey<FormState>();
   final _productionController = TextEditingController();
   final _notesController = TextEditingController();
-  
+
   DateTime _selectedDate = DateTime(
     DateTime.now().year,
-    DateTime.now().month + 1, // Next month
+    DateTime.now().month + 1, // Default bulan depan
   );
-  
+
   bool _isLoading = false;
-  ForecastOrder? _existingForecast;
+
+  // PERBAIKAN 1: Ganti ForecastModel
+  ForecastModel? _existingForecast;
 
   @override
   void initState() {
@@ -32,15 +35,18 @@ class _ForecastInputScreenState extends State<ForecastInputScreen> {
 
   Future<void> _loadExistingForecast() async {
     final dataService = Provider.of<DataService>(context, listen: false);
+
+    // Method ini mengembalikan ForecastModel?
     final forecast = await dataService.getForecast(
       _selectedDate.year,
       _selectedDate.month,
     );
-    
+
     if (forecast != null && mounted) {
       setState(() {
         _existingForecast = forecast;
-        _productionController.text = forecast.forecastProduction.toStringAsFixed(0);
+        _productionController.text = forecast.forecastProduction
+            .toStringAsFixed(0);
         _notesController.text = forecast.notes;
       });
     }
@@ -53,8 +59,10 @@ class _ForecastInputScreenState extends State<ForecastInputScreen> {
       firstDate: DateTime(DateTime.now().year, DateTime.now().month),
       lastDate: DateTime(DateTime.now().year + 2),
       helpText: 'Pilih Bulan Forecast',
+      // Modus calendar agar user memilih tanggal, lalu kita ambil bulan/tahunnya
+      initialEntryMode: DatePickerEntryMode.calendar,
     );
-    
+
     if (result != null) {
       setState(() {
         _selectedDate = DateTime(result.year, result.month);
@@ -68,25 +76,33 @@ class _ForecastInputScreenState extends State<ForecastInputScreen> {
 
   Future<void> _saveForecast() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     setState(() => _isLoading = true);
-    
+
     try {
       final dataService = Provider.of<DataService>(context, listen: false);
-      
-      final forecast = ForecastOrder(
-        id: _existingForecast?.id ?? 
+
+      // PERBAIKAN 2: Ambil data user yang sedang login
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final user = authService.currentUser;
+
+      // PERBAIKAN 1: Gunakan ForecastModel
+      final forecast = ForecastModel(
+        id:
+            _existingForecast?.id ??
             'forecast_${_selectedDate.year}_${_selectedDate.month}',
         year: _selectedDate.year,
         month: _selectedDate.month,
         forecastProduction: double.parse(_productionController.text),
         notes: _notesController.text.trim(),
         createdAt: DateTime.now(),
-        createdBy: 'Supervisor', // TODO: Get from auth
+        // PERBAIKAN 2: Gunakan nama user asli
+        createdBy: user?.name ?? 'Supervisor',
       );
-      
+
+      // Pastikan method ini menerima parameter ForecastOrder
       await dataService.addOrUpdateForecast(forecast);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -103,10 +119,7 @@ class _ForecastInputScreenState extends State<ForecastInputScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -119,11 +132,9 @@ class _ForecastInputScreenState extends State<ForecastInputScreen> {
   @override
   Widget build(BuildContext context) {
     final monthName = DateFormat.yMMMM('id_ID').format(_selectedDate);
-    
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Input Forecast Produksi'),
-      ),
+      appBar: AppBar(title: Text('Input Forecast Produksi')),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -136,18 +147,15 @@ class _ForecastInputScreenState extends State<ForecastInputScreen> {
                 title: Text('Periode Forecast'),
                 subtitle: Text(
                   monthName,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 trailing: Icon(Icons.arrow_drop_down),
                 onTap: _selectMonth,
               ),
             ),
-            
+
             SizedBox(height: 16),
-            
+
             // Production Forecast
             Card(
               child: Padding(
@@ -188,9 +196,9 @@ class _ForecastInputScreenState extends State<ForecastInputScreen> {
                 ),
               ),
             ),
-            
+
             SizedBox(height: 16),
-            
+
             // Notes
             Card(
               child: Padding(
@@ -218,9 +226,9 @@ class _ForecastInputScreenState extends State<ForecastInputScreen> {
                 ),
               ),
             ),
-            
+
             SizedBox(height: 24),
-            
+
             // Info Card
             Container(
               padding: EdgeInsets.all(12),
@@ -241,9 +249,9 @@ class _ForecastInputScreenState extends State<ForecastInputScreen> {
                 ],
               ),
             ),
-            
+
             SizedBox(height: 24),
-            
+
             // Save Button
             SizedBox(
               height: 50,

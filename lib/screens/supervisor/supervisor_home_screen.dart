@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../services/auth_service_mock.dart';
+import '../../services/auth_service.dart';
 import 'verification_screen.dart';
 import 'export_report_screen.dart';
 import '../management/management_dashboard.dart';
@@ -13,7 +13,12 @@ class SupervisorHomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = Provider.of<AuthService>(context).currentUser!;
+    final auth = context.watch<AuthService?>();
+
+    final user = auth?.currentUser;
+    if (user == null) {
+      return const SizedBox(); // atau Loading / Redirect
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -49,7 +54,10 @@ class SupervisorHomeScreen extends StatelessWidget {
                       children: [
                         Text(
                           user.name,
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         Text(
                           'Role: ${user.role.toString().split('.').last.toUpperCase()}',
@@ -103,11 +111,13 @@ class SupervisorHomeScreen extends StatelessWidget {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => ManagementDashboard()),
+                        MaterialPageRoute(
+                          builder: (_) => ManagementDashboard(),
+                        ),
                       );
                     },
                   ),
-                  
+
                   // ========== NEW MENUS ==========
                   _MenuCard(
                     title: 'Forecast Produksi',
@@ -116,7 +126,9 @@ class SupervisorHomeScreen extends StatelessWidget {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => ForecastInputScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => ForecastInputScreen(),
+                        ),
                       );
                     },
                   ),
@@ -127,7 +139,9 @@ class SupervisorHomeScreen extends StatelessWidget {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => GasEstimationScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => GasEstimationScreen(),
+                        ),
                       );
                     },
                   ),
@@ -138,7 +152,9 @@ class SupervisorHomeScreen extends StatelessWidget {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => EfficiencyEvaluationScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => EfficiencyEvaluationScreen(),
+                        ),
                       );
                     },
                   ),

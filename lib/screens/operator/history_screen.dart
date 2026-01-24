@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../models/gas_record_model.dart';
-import '../../services/auth_service_mock.dart';
-import '../../services/data_service_mock.dart';
+import '../../services/auth_service.dart';
+import '../../services/data_service.dart';
 
 class HistoryScreen extends StatefulWidget {
   @override
@@ -55,9 +55,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
       await dataService.deleteRecord(recordId);
       _loadRecords();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Data berhasil dihapus')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Data berhasil dihapus')));
       }
     }
   }
@@ -65,39 +65,37 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Riwayat Input (Belum Diverifikasi)'),
-      ),
+      appBar: AppBar(title: Text('Riwayat Input (Belum Diverifikasi)')),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : _records.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.inbox, size: 80, color: Colors.grey),
-                      SizedBox(height: 16),
-                      Text(
-                        'Tidak ada data pending',
-                        style: TextStyle(fontSize: 16, color: Colors.grey),
-                      ),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.inbox, size: 80, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text(
+                    'Tidak ada data pending',
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
                   ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _loadRecords,
-                  child: ListView.builder(
-                    padding: EdgeInsets.all(16),
-                    itemCount: _records.length,
-                    itemBuilder: (context, index) {
-                      final record = _records[index];
-                      return _RecordCard(
-                        record: record,
-                        onDelete: () => _deleteRecord(record.id),
-                      );
-                    },
-                  ),
-                ),
+                ],
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _loadRecords,
+              child: ListView.builder(
+                padding: EdgeInsets.all(16),
+                itemCount: _records.length,
+                itemBuilder: (context, index) {
+                  final record = _records[index];
+                  return _RecordCard(
+                    record: record,
+                    onDelete: () => _deleteRecord(record.id),
+                  );
+                },
+              ),
+            ),
     );
   }
 }
@@ -137,7 +135,11 @@ class _RecordCard extends StatelessWidget {
             SizedBox(height: 8),
             Row(
               children: [
-                Icon(Icons.precision_manufacturing, size: 20, color: Colors.grey),
+                Icon(
+                  Icons.precision_manufacturing,
+                  size: 20,
+                  color: Colors.grey,
+                ),
                 SizedBox(width: 8),
                 Text(record.machineName, style: TextStyle(fontSize: 15)),
               ],
@@ -165,7 +167,12 @@ class _RecordCard extends StatelessWidget {
                   children: [
                     Icon(Icons.note, size: 16, color: Colors.grey),
                     SizedBox(width: 8),
-                    Expanded(child: Text(record.notes!, style: TextStyle(fontSize: 13))),
+                    Expanded(
+                      child: Text(
+                        record.notes!,
+                        style: TextStyle(fontSize: 13),
+                      ),
+                    ),
                   ],
                 ),
               ),

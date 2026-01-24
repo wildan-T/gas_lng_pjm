@@ -10,12 +10,12 @@ class DataService with ChangeNotifier {
   //                     STORAGE UTAMA
   // ====================================================
   List<GasRecord> _records = [];
-  List<Machine> _machines = [];
+  List<MachineModel> _machines = [];
 
   // ====================================================
   //               FORECASTS & SYSTEM SETTINGS
   // ====================================================
-  List<ForecastOrder> _forecasts = [];
+  List<ForecastModel> _forecasts = [];
 
   SystemSettings _settings = SystemSettings(
     id: 'settings_1',
@@ -240,7 +240,7 @@ class DataService with ChangeNotifier {
 
     // ========== SAMPLE FORECASTS ==========
     _forecasts.addAll([
-      ForecastOrder(
+      ForecastModel(
         id: 'forecast_2025_2',
         year: 2025,
         month: 2,
@@ -249,7 +249,7 @@ class DataService with ChangeNotifier {
         createdAt: DateTime.now().subtract(Duration(days: 5)),
         createdBy: 'Supervisor',
       ),
-      ForecastOrder(
+      ForecastModel(
         id: 'forecast_2025_3',
         year: 2025,
         month: 3,
@@ -262,7 +262,9 @@ class DataService with ChangeNotifier {
 
     // Log & notify
     if (kDebugMode) {
-      print('✅ Sample data initialized: ${_records.length} records, ${_forecasts.length} forecasts');
+      print(
+        '✅ Sample data initialized: ${_records.length} records, ${_forecasts.length} forecasts',
+      );
     }
     notifyListeners();
   }
@@ -295,7 +297,10 @@ class DataService with ChangeNotifier {
   }
 
   Future<void> verifyRecord(
-      String recordId, String supervisorId, String supervisorName) async {
+    String recordId,
+    String supervisorId,
+    String supervisorName,
+  ) async {
     await Future.delayed(Duration(milliseconds: 500));
 
     final index = _records.indexWhere((r) => r.id == recordId);
@@ -317,7 +322,10 @@ class DataService with ChangeNotifier {
     }
   }
 
-  Future<void> updateRecord(String recordId, Map<String, dynamic> updates) async {
+  Future<void> updateRecord(
+    String recordId,
+    Map<String, dynamic> updates,
+  ) async {
     await Future.delayed(Duration(milliseconds: 500));
 
     final index = _records.indexWhere((r) => r.id == recordId);
@@ -349,18 +357,18 @@ class DataService with ChangeNotifier {
   //                        MACHINES
   // ====================================================
 
-  Future<List<Machine>> getMachines() async {
+  Future<List<MachineModel>> getMachines() async {
     await Future.delayed(Duration(milliseconds: 200));
     return List.from(_machines.where((m) => m.isActive));
   }
 
-  Future<void> addMachine(Machine machine) async {
+  Future<void> addMachine(MachineModel machine) async {
     await Future.delayed(Duration(milliseconds: 500));
     _machines.add(machine);
     notifyListeners();
   }
 
-  Future<void> updateMachine(String id, Machine machine) async {
+  Future<void> updateMachine(String id, MachineModel machine) async {
     await Future.delayed(Duration(milliseconds: 500));
     final index = _machines.indexWhere((m) => m.id == id);
     if (index != -1) {
@@ -373,7 +381,7 @@ class DataService with ChangeNotifier {
     await Future.delayed(Duration(milliseconds: 500));
     final index = _machines.indexWhere((m) => m.id == id);
     if (index != -1) {
-      _machines[index] = Machine(
+      _machines[index] = MachineModel(
         id: _machines[index].id,
         name: _machines[index].name,
         location: _machines[index].location,
@@ -394,10 +402,12 @@ class DataService with ChangeNotifier {
     final endDate = DateTime(year, month + 1, 0, 23, 59, 59);
 
     final filtered = _records
-        .where((r) =>
-            r.timestamp.isAfter(startDate) &&
-            r.timestamp.isBefore(endDate) &&
-            r.isVerified)
+        .where(
+          (r) =>
+              r.timestamp.isAfter(startDate) &&
+              r.timestamp.isBefore(endDate) &&
+              r.isVerified,
+        )
         .toList();
 
     double totalConsumption = 0;
@@ -431,16 +441,15 @@ class DataService with ChangeNotifier {
   //                  FORECAST MANAGEMENT
   // ====================================================
 
-  Future<List<ForecastOrder>> getForecasts() async {
+  Future<List<ForecastModel>> getForecasts() async {
     await Future.delayed(Duration(milliseconds: 300));
-    return List.from(_forecasts)
-      ..sort((a, b) {
-        if (a.year != b.year) return b.year.compareTo(a.year);
-        return b.month.compareTo(a.month);
-      });
+    return List.from(_forecasts)..sort((a, b) {
+      if (a.year != b.year) return b.year.compareTo(a.year);
+      return b.month.compareTo(a.month);
+    });
   }
 
-  Future<ForecastOrder?> getForecast(int year, int month) async {
+  Future<ForecastModel?> getForecast(int year, int month) async {
     await Future.delayed(Duration(milliseconds: 300));
     try {
       return _forecasts.firstWhere((f) => f.year == year && f.month == month);
@@ -449,11 +458,12 @@ class DataService with ChangeNotifier {
     }
   }
 
-  Future<void> addOrUpdateForecast(ForecastOrder forecast) async {
+  Future<void> addOrUpdateForecast(ForecastModel forecast) async {
     await Future.delayed(Duration(milliseconds: 500));
 
     _forecasts.removeWhere(
-        (f) => f.year == forecast.year && f.month == forecast.month);
+      (f) => f.year == forecast.year && f.month == forecast.month,
+    );
 
     _forecasts.add(forecast);
 
@@ -520,7 +530,9 @@ class DataService with ChangeNotifier {
   // ====================================================
 
   Future<EfficiencyEvaluation?> getEfficiencyEvaluation(
-      int year, int month) async {
+    int year,
+    int month,
+  ) async {
     await Future.delayed(Duration(milliseconds: 500));
 
     final summary = await getMonthlySummary(year, month);
@@ -536,8 +548,10 @@ class DataService with ChangeNotifier {
     for (var record in _records) {
       if (!record.isVerified) continue;
 
-      final recordMonth =
-          DateTime(record.timestamp.year, record.timestamp.month);
+      final recordMonth = DateTime(
+        record.timestamp.year,
+        record.timestamp.month,
+      );
 
       if (recordMonth == currentPeriod) continue;
 
@@ -565,8 +579,9 @@ class DataService with ChangeNotifier {
     );
   }
 
-  Future<List<EfficiencyEvaluation>> getEfficiencyHistory(
-      {int limit = 12}) async {
+  Future<List<EfficiencyEvaluation>> getEfficiencyHistory({
+    int limit = 12,
+  }) async {
     await Future.delayed(Duration(milliseconds: 500));
 
     List<EfficiencyEvaluation> history = [];

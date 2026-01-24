@@ -1,15 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-import 'services/auth_service_mock.dart';
-import 'services/data_service_mock.dart';
+import 'services/auth_service.dart';
+import 'services/data_service.dart';
 import 'screens/auth/login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('id_ID', null);
-  
+
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    print('Error initializing Firebase: $e');
+  }
+
   runApp(const MyApp());
 }
 
@@ -20,8 +27,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        Provider<AuthService>(create: (_) => AuthService()),
-        Provider<DataService>(create: (_) => DataService()),
+        // Provider<AuthService>(create: (_) => AuthService()),
+        // Provider<DataService>(create: (_) => DataService()),
+        ChangeNotifierProvider<DataService>(create: (_) => DataService()),
+        ChangeNotifierProvider<AuthService>(create: (_) => AuthService()),
       ],
       child: MaterialApp(
         title: 'Gas LNG PJM',

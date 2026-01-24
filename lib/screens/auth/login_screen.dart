@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../services/auth_service_mock.dart';
+// UBAH INI: Gunakan service asli, bukan mock
+import '../../services/auth_service.dart';
 import '../../models/user_model.dart';
 import '../operator/operator_home_screen.dart';
 import '../supervisor/supervisor_home_screen.dart';
@@ -25,19 +26,41 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
+    // Validasi input kosong sederhana
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Email dan Password tidak boleh kosong')),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
 
+    // Mengambil instance AuthService (yang sudah terhubung Firebase)
     final authService = Provider.of<AuthService>(context, listen: false);
+
     final success = await authService.login(
-      _emailController.text,
+      _emailController.text.trim(), // Trim untuk menghapus spasi tidak sengaja
       _passwordController.text,
     );
 
     setState(() => _isLoading = false);
 
     if (success && mounted) {
-      final user = authService.currentUser!;
-      
+      final user = authService.currentUser;
+
+      // Safety check: Pastikan user data berhasil diambil dari Firestore
+      if (user == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Login berhasil, tapi data user tidak ditemukan di Firestore.',
+            ),
+          ),
+        );
+        return;
+      }
+
       Widget homeScreen;
       switch (user.role) {
         case UserRole.operator:
@@ -54,9 +77,19 @@ class _LoginScreenState extends State<LoginScreen> {
           break;
       }
 
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => homeScreen),
-      );
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => homeScreen));
+    } else {
+      // TAMBAHAN: Tampilkan pesan error jika login gagal
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Login Gagal. Cek email & password Anda.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -83,6 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
               TextField(
                 controller: _emailController,
+                keyboardType: TextInputType.emailAddress, // Keyboard email
                 decoration: InputDecoration(
                   labelText: 'Email',
                   border: OutlineInputBorder(),
@@ -114,12 +148,28 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               SizedBox(height: 24),
 
-              Text('Demo Accounts:', style: TextStyle(fontWeight: FontWeight.bold)),
-              SizedBox(height: 8),
-              Text('operator@pjm.com - Operator'),
-              Text('supervisor@pjm.com - Supervisor'),
-              Text('admin@pjm.com - Admin'),
-              Text('manager@pjm.com - Management'),
+              // Bagian ini hanya teks bantuan visual
+              // Pastikan akun-akun ini SUDAH DIBUAT di Firebase Console & Firestore
+              Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      'Demo Accounts (Create in Firebase first):',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 8),
+                    Text('operator@pjm.com - Operator'),
+                    Text('supervisor@pjm.com - Supervisor'),
+                    Text('admin@pjm.com - Admin'),
+                    Text('manager@pjm.com - Management'),
+                  ],
+                ),
+              ),
             ],
           ),
         ),

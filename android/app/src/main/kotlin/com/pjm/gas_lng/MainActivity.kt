@@ -1,4 +1,4 @@
-package com.example.gas_lng_pjm
+package com.pjm.gas_lng
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1045155342263",
+    "project_id": "gas-lng-monitoring",
+    "storage_bucket": "gas-lng-monitoring.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1045155342263:android:25f69f6c127444ec9c2a32",
+        "android_client_info": {
+          "package_name": "com.pjm.gas_lng"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB_v8DAQPoR1-vQkws43G_3DBXqw9BgLoU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

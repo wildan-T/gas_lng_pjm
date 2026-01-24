@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../../services/data_service_mock.dart';
+import '../../services/data_service.dart';
 import '../../models/forecast_model.dart';
 
 class EfficiencyEvaluationScreen extends StatefulWidget {
@@ -14,10 +14,7 @@ class EfficiencyEvaluationScreen extends StatefulWidget {
 
 class _EfficiencyEvaluationScreenState
     extends State<EfficiencyEvaluationScreen> {
-  DateTime _selectedDate = DateTime(
-    DateTime.now().year,
-    DateTime.now().month,
-  );
+  DateTime _selectedDate = DateTime(DateTime.now().year, DateTime.now().month);
 
   // ✅ Helper methods untuk warna
   Color _getCategoryMainColor(EfficiencyCategory category) {
@@ -148,7 +145,10 @@ class _EfficiencyEvaluationScreenState
           Expanded(
             child: FutureBuilder<EfficiencyEvaluation?>(
               future: Provider.of<DataService>(context, listen: false)
-                  .getEfficiencyEvaluation(_selectedDate.year, _selectedDate.month),
+                  .getEfficiencyEvaluation(
+                    _selectedDate.year,
+                    _selectedDate.month,
+                  ),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(child: CircularProgressIndicator());
@@ -207,10 +207,7 @@ class _EfficiencyEvaluationScreenState
             Text(
               'Evaluasi efisiensi akan tersedia setelah\nada data konsumsi yang terverifikasi',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade600,
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
             ),
           ],
         ),
@@ -258,10 +255,7 @@ class _EfficiencyEvaluationScreenState
                 SizedBox(height: 4),
                 Text(
                   'Deviasi dari rata-rata historis',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
               ],
             ),
@@ -367,10 +361,7 @@ class _EfficiencyEvaluationScreenState
               children: [
                 Text(
                   'Kategori Efisiensi',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 Divider(height: 24),
                 _buildLegendItem(
@@ -398,8 +389,12 @@ class _EfficiencyEvaluationScreenState
     );
   }
 
-  Widget _buildComparisonRow(String label, String value, Color color,
-      {bool isBold = false}) {
+  Widget _buildComparisonRow(
+    String label,
+    String value,
+    Color color, {
+    bool isBold = false,
+  }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -430,10 +425,7 @@ class _EfficiencyEvaluationScreenState
           width: 16,
           height: 16,
           margin: EdgeInsets.only(top: 2),
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         SizedBox(width: 12),
         Expanded(
@@ -442,17 +434,11 @@ class _EfficiencyEvaluationScreenState
             children: [
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
               ),
               Text(
                 description,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade600,
-                ),
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
               ),
             ],
           ),
@@ -526,12 +512,12 @@ class EfficiencyHistoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Riwayat Evaluasi Efisiensi'),
-      ),
+      appBar: AppBar(title: Text('Riwayat Evaluasi Efisiensi')),
       body: FutureBuilder<List<EfficiencyEvaluation>>(
-        future: Provider.of<DataService>(context, listen: false)
-            .getEfficiencyHistory(limit: 12),
+        future: Provider.of<DataService>(
+          context,
+          listen: false,
+        ).getEfficiencyHistory(limit: 12),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());

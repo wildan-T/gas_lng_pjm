@@ -1,8 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:gas_lng_pjm/models/gas_record_model.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:open_file/open_file.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../services/data_service.dart';
 import '../../services/export_service.dart';
 
@@ -25,13 +27,13 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
     try {
       final dataService = Provider.of<DataService>(context, listen: false);
 
-      // Get summary
+      // 1. Ambil Summary (Ini sudah berisi list records bulan tersebut)
       final summary = await dataService.getMonthlySummary(
-        _selectedYear,
         _selectedMonth,
+        _selectedYear,
       );
 
-      // Validate data
+      // 2. Validasi
       if (summary['recordCount'] == 0) {
         if (mounted) {
           setState(() => _isExporting = false);
@@ -45,26 +47,25 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
         return;
       }
 
-      // Get all verified records for the month
-      final allRecords = await dataService.getGasRecords();
-      final startDate = DateTime(_selectedYear, _selectedMonth, 1);
-      final endDate = DateTime(
-        _selectedYear,
-        _selectedMonth + 1,
-        0,
-        23,
-        59,
-        59,
-      );
+      // 3. OPTIMASI: Langsung ambil records dari hasil summary
+      // Tidak perlu panggil getGasRecords() dan filter manual lagi
+      final List<GasRecord> monthRecords =
+          summary['records'] as List<GasRecord>;
 
-      final monthRecords = allRecords
-          .where(
-            (r) =>
-                r.timestamp.isAfter(startDate) &&
-                r.timestamp.isBefore(endDate) &&
-                r.isVerified,
-          )
-          .toList();
+      // Filter ulang hanya untuk memastikan yang verified (jika di query belum difilter)
+      final verifiedRecords = monthRecords.where((r) => r.isVerified).toList();
+
+      if (verifiedRecords.isEmpty) {
+        if (mounted) {
+          setState(() => _isExporting = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Data ada tapi belum diverifikasi Supervisor'),
+            ),
+          );
+        }
+        return;
+      }
 
       File exportedFile;
 
@@ -73,14 +74,14 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
           year: _selectedYear,
           month: _selectedMonth,
           summary: summary,
-          records: monthRecords,
+          records: verifiedRecords, // Gunakan list yang sudah dioptimasi
         );
       } else {
         exportedFile = await ExportService.generateMonthlyReportExcel(
           year: _selectedYear,
           month: _selectedMonth,
           summary: summary,
-          records: monthRecords,
+          records: verifiedRecords,
         );
       }
 
@@ -94,23 +95,37 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
               children: [
                 Icon(Icons.check_circle, color: Colors.green),
                 SizedBox(width: 8),
-                Text('Berhasil'),
+                Text('Laporan Siap'),
               ],
             ),
-            content: Text(
-              'Laporan berhasil dibuat!\n\nFile: ${exportedFile.path.split('/').last}',
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('File berhasil dibuat.'),
+                SizedBox(height: 8),
+                Text(
+                  'Silakan bagikan atau simpan file ini ke penyimpanan Anda.',
+                ),
+              ],
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: Text('Tutup'),
               ),
-              ElevatedButton(
+              // GANTI TOMBOL "BUKA FILE" DENGAN INI:
+              ElevatedButton.icon(
+                icon: Icon(Icons.share),
+                label: Text('Bagikan / Simpan'),
                 onPressed: () async {
                   Navigator.pop(context);
-                  await OpenFile.open(exportedFile.path);
+                  // Fitur Share (Pengganti Download)
+                  await Share.shareXFiles(
+                    [XFile(exportedFile.path)],
+                    text: 'Laporan Gas Periode $_selectedMonth-$_selectedYear',
+                  );
                 },
-                child: Text('Buka File'),
               ),
             ],
           ),

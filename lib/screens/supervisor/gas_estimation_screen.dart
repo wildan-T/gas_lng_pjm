@@ -89,7 +89,7 @@ class _GasEstimationScreenState extends State<GasEstimationScreen> {
               future: Provider.of<DataService>(
                 context,
                 listen: false,
-              ).getGasEstimation(_selectedDate.year, _selectedDate.month),
+              ).getGasEstimation(_selectedDate.month, _selectedDate.year),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(child: CircularProgressIndicator());

@@ -28,11 +28,19 @@ class _ManagementDashboardState extends State<ManagementDashboard> {
   Future<void> _loadSummary() async {
     setState(() => _isLoading = true);
     final dataService = Provider.of<DataService>(context, listen: false);
-    final summary = await dataService.getSummary();
-    setState(() {
-      _summary = summary;
-      _isLoading = false;
-    });
+
+    // PERBAIKAN: Kirim parameter tahun & bulan yang dipilih
+    final summary = await dataService.getSummary(
+      year: _selectedYear,
+      month: _selectedMonth,
+    );
+
+    if (mounted) {
+      setState(() {
+        _summary = summary;
+        _isLoading = false;
+      });
+    }
   }
 
   @override

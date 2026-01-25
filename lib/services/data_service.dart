@@ -255,34 +255,73 @@ class DataService with ChangeNotifier {
   // ==========================================
 
   // Dashboard Summary (Management Dashboard)
-  Future<Map<String, dynamic>> getSummary() async {
-    // Logic: Ambil data bulan ini
-    DateTime now = DateTime.now();
-    DateTime startOfMonth = DateTime(now.year, now.month, 1);
+  // Update: Menerima parameter bulan & tahun
+  Future<Map<String, dynamic>> getSummary({int? month, int? year}) async {
+    try {
+      DateTime now = DateTime.now();
+      int targetMonth = month ?? now.month;
+      int targetYear = year ?? now.year;
 
-    QuerySnapshot snapshot = await _recordsRef
-        .where(
-          'timestamp',
-          isGreaterThanOrEqualTo: Timestamp.fromDate(startOfMonth),
-        )
-        .get();
+      // Tentukan range tanggal awal & akhir bulan
+      DateTime start = DateTime(targetYear, targetMonth, 1);
+      DateTime end = DateTime(targetYear, targetMonth + 1, 0, 23, 59, 59);
 
-    List<GasRecord> records = snapshot.docs
-        .map((doc) => GasRecord.fromFirestore(doc))
-        .toList();
+      QuerySnapshot snapshot = await _recordsRef
+          .where('timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(start))
+          .where('timestamp', isLessThanOrEqualTo: Timestamp.fromDate(end))
+          .get();
 
-    double totalUsage = records.fold(0, (sum, item) => sum + item.amount);
+      List<GasRecord> records = snapshot.docs
+          .map((doc) => GasRecord.fromFirestore(doc))
+          .toList();
 
-    // Ambil harga gas
-    GasPriceModel? price = await getCurrentGasPrice();
-    double currentPrice = price?.pricePerM3 ?? 0;
+      double totalUsage = 0;
+      Map<int, double> dailyConsumption = {};
+      Map<String, double> machineConsumption = {};
 
-    return {
-      'totalUsage': totalUsage,
-      'totalCost': totalUsage * currentPrice,
-      'recordCount': records.length,
-      'lastUpdate': DateTime.now(), // Mocked for now
-    };
+      for (var record in records) {
+        totalUsage += record.amount;
+
+        // Grouping per Hari (1-31)
+        int day = record.timestamp.day;
+        dailyConsumption[day] = (dailyConsumption[day] ?? 0) + record.amount;
+
+        // Grouping per Mesin
+        String machine = record.machineName;
+        machineConsumption[machine] =
+            (machineConsumption[machine] ?? 0) + record.amount;
+      }
+
+      // Hitung Rata-rata Harian (berdasarkan hari yang ada datanya)
+      double avgDaily = dailyConsumption.isNotEmpty
+          ? totalUsage / dailyConsumption.length
+          : 0;
+
+      // Ambil harga gas saat ini
+      GasPriceModel? price = await getCurrentGasPrice();
+      double currentPrice = price?.pricePerM3 ?? 0;
+
+      return {
+        'totalConsumption': totalUsage, // Sesuai key di UI
+        'totalCost': totalUsage * currentPrice,
+        'avgDaily': avgDaily,
+        'recordCount': records.length,
+        'dailyConsumption':
+            dailyConsumption, // Map<int, double> untuk Grafik Garis
+        'machineConsumption':
+            machineConsumption, // Map<String, double> untuk Grafik Batang
+      };
+    } catch (e) {
+      print('Error generating summary: $e');
+      return {
+        'totalConsumption': 0.0,
+        'totalCost': 0.0,
+        'avgDaily': 0.0,
+        'recordCount': 0,
+        'dailyConsumption': <int, double>{},
+        'machineConsumption': <String, double>{},
+      };
+    }
   }
 
   // Monthly Summary (Export Report)
@@ -298,24 +337,58 @@ class DataService with ChangeNotifier {
     List<GasRecord> records = snapshot.docs
         .map((doc) => GasRecord.fromFirestore(doc))
         .toList();
-    double totalUsage = records.fold(0, (sum, item) => sum + item.amount);
+
+    // --- MULAI PERBAIKAN LOGIKA HITUNG ---
+    double totalUsage = 0;
+    Map<String, double> machineConsumption =
+        {}; // Definisikan tipe data eksplisit
+
+    for (var record in records) {
+      totalUsage += record.amount;
+
+      // Hitung per mesin
+      String machine = record.machineName;
+      machineConsumption[machine] =
+          (machineConsumption[machine] ?? 0) + record.amount;
+    }
+
+    // Hitung rata-rata harian (opsional, untuk export PDF agar tidak 0)
+    // Menggunakan jumlah hari dalam bulan tersebut atau jumlah hari yang ada datanya
+    int daysInMonth = DateTime(year, month + 1, 0).day;
+    double avgDaily = totalUsage / daysInMonth;
+
+    // Ambil harga (opsional untuk export)
+    GasPriceModel? priceObj = await getCurrentGasPrice();
+    double pricePerM3 = priceObj?.pricePerM3 ?? 0;
+    double totalCost = totalUsage * pricePerM3;
+    // --- SELESAI PERBAIKAN ---
 
     return {
       'month': month,
       'year': year,
-      'totalUsage': totalUsage,
+      'totalConsumption':
+          totalUsage, // Samakan key dengan yang diminta ExportService
+      'totalCost': totalCost, // Tambahkan ini
+      'avgDaily': avgDaily, // Tambahkan ini
+      'pricePerM3': pricePerM3, // Tambahkan ini
+      'recordCount': records.length, // Tambahkan ini
       'records': records,
+      'machineConsumption': machineConsumption, // <--- INI YANG PALING PENTING
     };
   }
 
   // Gas Estimation (Supervisor)
   Future<GasEstimation?> getGasEstimation(int month, int year) async {
     // 1. Ambil Forecast Produksi
+    print("DEBUG: Mencari Forecast untuk Bulan: $month, Tahun: $year");
+
     QuerySnapshot forecastSnap = await _forecastsRef
         .where('year', isEqualTo: year)
         .where('month', isEqualTo: month)
         .limit(1)
         .get();
+
+    print("DEBUG: Ditemukan ${forecastSnap.docs.length} dokumen");
 
     if (forecastSnap.docs.isEmpty) return null; // Tidak ada forecast
 
@@ -370,13 +443,34 @@ class DataService with ChangeNotifier {
     );
   }
 
-  // History Efficiency (Grafik)
+  // History Efficiency (Grafik & List Riwayat)
   Future<List<EfficiencyEvaluation>> getEfficiencyHistory({
     int limit = 12,
   }) async {
-    // Return data dummy atau query real 6 bulan terakhir
-    // Ini contoh return kosong agar tidak error, logika sama dengan getEfficiencyEvaluation loop
-    return [];
+    List<EfficiencyEvaluation> history = [];
+    DateTime now = DateTime.now();
+
+    try {
+      // Loop mundur dari bulan lalu sebanyak 'limit' kali
+      for (int i = 1; i <= limit; i++) {
+        DateTime targetDate = DateTime(now.year, now.month - i);
+
+        // Panggil evaluasi untuk bulan tersebut
+        EfficiencyEvaluation? eval = await getEfficiencyEvaluation(
+          targetDate.month,
+          targetDate.year,
+        );
+
+        // Hanya tambahkan jika ada datanya (actualConsumption > 0)
+        if (eval != null && eval.actualConsumption > 0) {
+          history.add(eval);
+        }
+      }
+      return history;
+    } catch (e) {
+      print("Error getting history: $e");
+      return [];
+    }
   }
 
   // ==========================================

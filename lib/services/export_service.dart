@@ -9,7 +9,7 @@ import '../models/gas_record_model.dart';
 
 class ExportService {
   // ========== PDF EXPORT ==========
-  
+
   static Future<File> generateMonthlyReportPDF({
     required int year,
     required int month,
@@ -62,10 +62,7 @@ class ExportService {
                     pw.SizedBox(height: 8),
                     pw.Text(
                       'PT Panata Jaya Mandiri',
-                      style: pw.TextStyle(
-                        fontSize: 16,
-                        color: PdfColors.white,
-                      ),
+                      style: pw.TextStyle(fontSize: 16, color: PdfColors.white),
                     ),
                   ],
                 ),
@@ -114,7 +111,10 @@ class ExportService {
                         ),
                         pw.SizedBox(height: 4),
                         pw.Text(
-                          DateFormat('dd MMMM yyyy', 'id_ID').format(DateTime.now()),
+                          DateFormat(
+                            'dd MMMM yyyy',
+                            'id_ID',
+                          ).format(DateTime.now()),
                           style: pw.TextStyle(
                             fontSize: 14,
                             fontWeight: pw.FontWeight.bold,
@@ -150,7 +150,10 @@ class ExportService {
                         children: [
                           pw.Text(
                             'Total Konsumsi',
-                            style: pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
+                            style: pw.TextStyle(
+                              fontSize: 10,
+                              color: PdfColors.grey700,
+                            ),
                           ),
                           pw.SizedBox(height: 4),
                           pw.Text(
@@ -178,7 +181,10 @@ class ExportService {
                         children: [
                           pw.Text(
                             'Total Biaya',
-                            style: pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
+                            style: pw.TextStyle(
+                              fontSize: 10,
+                              color: PdfColors.grey700,
+                            ),
                           ),
                           pw.SizedBox(height: 4),
                           pw.Text(
@@ -210,7 +216,10 @@ class ExportService {
                         children: [
                           pw.Text(
                             'Rata-rata Harian',
-                            style: pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
+                            style: pw.TextStyle(
+                              fontSize: 10,
+                              color: PdfColors.grey700,
+                            ),
                           ),
                           pw.SizedBox(height: 4),
                           pw.Text(
@@ -238,7 +247,10 @@ class ExportService {
                         children: [
                           pw.Text(
                             'Total Records',
-                            style: pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
+                            style: pw.TextStyle(
+                              fontSize: 10,
+                              color: PdfColors.grey700,
+                            ),
                           ),
                           pw.SizedBox(height: 4),
                           pw.Text(
@@ -299,9 +311,9 @@ class ExportService {
                     ],
                   ),
                   // Data
-                  ...((summary['machineConsumption'] ?? {}) as Map<String, double>)
-                      .entries
-                      .map((entry) {
+                  ...Map<String, double>.from(
+                    summary['machineConsumption'] ?? {},
+                  ).entries.map((entry) {
                     final percentage = totalConsumption > 0
                         ? (entry.value / totalConsumption * 100)
                         : 0.0;
@@ -377,9 +389,17 @@ class ExportService {
                         children: [
                           _buildTableCell('Tanggal', isHeader: true),
                           _buildTableCell('Mesin', isHeader: true),
-                          _buildTableCell('Jumlah (m3)', isHeader: true, align: pw.TextAlign.right),
+                          _buildTableCell(
+                            'Jumlah (m3)',
+                            isHeader: true,
+                            align: pw.TextAlign.right,
+                          ),
                           _buildTableCell('Operator', isHeader: true),
-                          _buildTableCell('Status', isHeader: true, align: pw.TextAlign.center),
+                          _buildTableCell(
+                            'Status',
+                            isHeader: true,
+                            align: pw.TextAlign.center,
+                          ),
                         ],
                       ),
                       // Data
@@ -387,7 +407,10 @@ class ExportService {
                         return pw.TableRow(
                           children: [
                             _buildTableCell(
-                              DateFormat('dd/MM/yy\nHH:mm', 'id_ID').format(record.timestamp),
+                              DateFormat(
+                                'dd/MM/yy\nHH:mm',
+                                'id_ID',
+                              ).format(record.timestamp),
                             ),
                             _buildTableCell(record.machineName),
                             _buildTableCell(
@@ -417,7 +440,9 @@ class ExportService {
       pw.Page(
         pageFormat: PdfPageFormat.a4,
         build: (context) {
-          final machineData = (summary['machineConsumption'] ?? {}) as Map<String, double>;
+          final machineData = Map<String, double>.from(
+            summary['machineConsumption'] ?? {},
+          );
           final maxMachine = machineData.isNotEmpty
               ? machineData.entries.reduce((a, b) => a.value > b.value ? a : b)
               : null;
@@ -609,15 +634,21 @@ class ExportService {
     row += 2;
 
     summarySheet.getRangeByName('A$row').setText('Total Konsumsi');
-    summarySheet.getRangeByName('B$row').setText('${numberFormat.format(totalConsumption)} m3');
+    summarySheet
+        .getRangeByName('B$row')
+        .setText('${numberFormat.format(totalConsumption)} m3');
     row++;
 
     summarySheet.getRangeByName('A$row').setText('Total Biaya');
-    summarySheet.getRangeByName('B$row').setText(currencyFormat.format(totalCost));
+    summarySheet
+        .getRangeByName('B$row')
+        .setText(currencyFormat.format(totalCost));
     row++;
 
     summarySheet.getRangeByName('A$row').setText('Rata-rata Harian');
-    summarySheet.getRangeByName('B$row').setText('${numberFormat.format(avgDaily)} m3');
+    summarySheet
+        .getRangeByName('B$row')
+        .setText('${numberFormat.format(avgDaily)} m3');
     row++;
 
     summarySheet.getRangeByName('A$row').setText('Total Records');
@@ -625,7 +656,9 @@ class ExportService {
     row++;
 
     summarySheet.getRangeByName('A$row').setText('Harga Gas per m3');
-    summarySheet.getRangeByName('B$row').setText(currencyFormat.format(pricePerM3));
+    summarySheet
+        .getRangeByName('B$row')
+        .setText(currencyFormat.format(pricePerM3));
     row += 2;
 
     // Machine Consumption
@@ -641,14 +674,18 @@ class ExportService {
     summarySheet.getRangeByName('A$row:C$row').cellStyle.backColor = '#D9E1F2';
     row++;
 
-    final machineData = (summary['machineConsumption'] ?? {}) as Map<String, double>;
+    final machineData = Map<String, double>.from(
+      summary['machineConsumption'] ?? {},
+    );
     for (var entry in machineData.entries) {
       final percentage = totalConsumption > 0
           ? (entry.value / totalConsumption * 100)
           : 0.0;
       summarySheet.getRangeByName('A$row').setText(entry.key);
       summarySheet.getRangeByName('B$row').setNumber(entry.value);
-      summarySheet.getRangeByName('C$row').setText('${percentage.toStringAsFixed(1)}%');
+      summarySheet
+          .getRangeByName('C$row')
+          .setText('${percentage.toStringAsFixed(1)}%');
       row++;
     }
 
@@ -677,11 +714,15 @@ class ExportService {
 
     // Data
     for (var record in records) {
-      detailSheet.getRangeByName('A$row').setText(dateFormat.format(record.timestamp));
+      detailSheet
+          .getRangeByName('A$row')
+          .setText(dateFormat.format(record.timestamp));
       detailSheet.getRangeByName('B$row').setText(record.machineName);
       detailSheet.getRangeByName('C$row').setNumber(record.amount);
       detailSheet.getRangeByName('D$row').setText(record.operatorName);
-      detailSheet.getRangeByName('E$row').setText(record.isVerified ? 'Verified' : 'Pending');
+      detailSheet
+          .getRangeByName('E$row')
+          .setText(record.isVerified ? 'Verified' : 'Pending');
       detailSheet.getRangeByName('F$row').setText(record.notes ?? '-');
       row++;
     }

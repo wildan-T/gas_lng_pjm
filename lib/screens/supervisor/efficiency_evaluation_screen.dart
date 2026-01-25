@@ -146,8 +146,8 @@ class _EfficiencyEvaluationScreenState
             child: FutureBuilder<EfficiencyEvaluation?>(
               future: Provider.of<DataService>(context, listen: false)
                   .getEfficiencyEvaluation(
-                    _selectedDate.year,
                     _selectedDate.month,
+                    _selectedDate.year,
                   ),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {

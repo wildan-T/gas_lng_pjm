@@ -16,6 +16,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _obscurePassword = true;
   bool _isLoading = false;
 
   @override
@@ -127,11 +128,23 @@ class _LoginScreenState extends State<LoginScreen> {
 
               TextField(
                 controller: _passwordController,
-                obscureText: true,
+                obscureText: _obscurePassword,
                 decoration: InputDecoration(
                   labelText: 'Password',
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.lock),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  ),
                 ),
               ),
               SizedBox(height: 24),
@@ -150,26 +163,26 @@ class _LoginScreenState extends State<LoginScreen> {
 
               // Bagian ini hanya teks bantuan visual
               // Pastikan akun-akun ini SUDAH DIBUAT di Firebase Console & Firestore
-              Container(
-                padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      'Demo Accounts (Create in Firebase first):',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 8),
-                    Text('operator@pjm.com - Operator'),
-                    Text('supervisor@pjm.com - Supervisor'),
-                    Text('admin@pjm.com - Admin'),
-                    Text('manager@pjm.com - Management'),
-                  ],
-                ),
-              ),
+              // Container(
+              //   padding: EdgeInsets.all(16),
+              //   decoration: BoxDecoration(
+              //     color: Colors.grey[200],
+              //     borderRadius: BorderRadius.circular(8),
+              //   ),
+              //   child: Column(
+              //     children: [
+              //       Text(
+              //         'Demo Accounts (Create in Firebase first):',
+              //         style: TextStyle(fontWeight: FontWeight.bold),
+              //       ),
+              //       SizedBox(height: 8),
+              //       Text('operator@pjm.com - Operator'),
+              //       Text('supervisor@pjm.com - Supervisor'),
+              //       Text('admin@pjm.com - Admin'),
+              //       Text('manager@pjm.com - Management'),
+              //     ],
+              //   ),
+              // ),
             ],
           ),
         ),

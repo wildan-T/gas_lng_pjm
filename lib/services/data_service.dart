@@ -421,7 +421,8 @@ class DataService with ChangeNotifier {
   ) async {
     // 1. Ambil Total Penggunaan Aktual Bulan Ini
     var summary = await getMonthlySummary(month, year);
-    double actualUsage = summary['totalUsage'];
+    // Gunakan 'totalConsumption' (sesuai update Export) atau 0.0 jika null
+    double actualUsage = (summary['totalConsumption'] ?? 0.0) as double;
 
     // 2. Ambil Settings (Thresholds)
     SystemSettings? settings = await getSystemSettings();

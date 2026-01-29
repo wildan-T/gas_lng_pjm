@@ -89,7 +89,9 @@ class SupervisorHomeScreen extends StatelessWidget {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => VerificationScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => ManageRecordsScreen(),
+                        ),
                       );
                     },
                   ),

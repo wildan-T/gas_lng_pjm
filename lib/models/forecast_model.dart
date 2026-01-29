@@ -8,6 +8,7 @@ class ForecastModel {
   final int year;
   final int month;
   final double forecastProduction;
+  final double? actualProduction;
   final String notes;
   final DateTime createdAt;
   final String createdBy;
@@ -17,6 +18,7 @@ class ForecastModel {
     required this.year,
     required this.month,
     required this.forecastProduction,
+    this.actualProduction,
     this.notes = '',
     required this.createdAt,
     required this.createdBy,
@@ -27,6 +29,7 @@ class ForecastModel {
       'year': year,
       'month': month,
       'forecastProduction': forecastProduction,
+      'actualProduction': actualProduction,
       'notes': notes,
       'createdAt': Timestamp.fromDate(createdAt), // Gunakan Timestamp
       'createdBy': createdBy,
@@ -40,6 +43,7 @@ class ForecastModel {
       year: data['year'] ?? 0,
       month: data['month'] ?? 0,
       forecastProduction: (data['forecastProduction'] ?? 0).toDouble(),
+      actualProduction: (data['actualProduction'] ?? 0).toDouble(),
       notes: data['notes'] ?? '',
       createdAt: (data['createdAt'] as Timestamp).toDate(), // Baca Timestamp
       createdBy: data['createdBy'] ?? '',

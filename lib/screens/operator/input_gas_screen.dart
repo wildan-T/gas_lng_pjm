@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../models/gas_record_model.dart';
@@ -33,6 +34,26 @@ class _InputGasScreenState extends State<InputGasScreen> {
   void initState() {
     super.initState();
     _loadMachines();
+  }
+
+  // 1. Variabel untuk menyimpan tanggal yang dipilih (Default: Hari ini)
+  DateTime _selectedDate = DateTime.now();
+
+  // 2. Fungsi untuk memunculkan Date Picker
+  Future<void> _pickDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate, // Tanggal awal saat dialog dibuka
+      firstDate: DateTime(2020), // Batas tanggal paling lampau
+      lastDate: DateTime(2030), // Batas tanggal paling depan
+    );
+
+    // Jika user memilih tanggal (tidak klik batal), update state
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+      });
+    }
   }
 
   Future<void> _loadMachines() async {
@@ -176,7 +197,14 @@ class _InputGasScreenState extends State<InputGasScreen> {
 
       final record = GasRecord(
         id: 'rec_${DateTime.now().millisecondsSinceEpoch}',
-        timestamp: DateTime.now(),
+        timestamp: DateTime(
+          _selectedDate.year,
+          _selectedDate.month,
+          _selectedDate.day,
+          DateTime.now().hour,
+          DateTime.now().minute,
+          DateTime.now().second,
+        ),
         amount: double.parse(_amountController.text),
         machineName: _selectedMachine!.name,
         notes: _notesController.text.isEmpty ? null : _notesController.text,
@@ -231,11 +259,19 @@ class _InputGasScreenState extends State<InputGasScreen> {
                     Card(
                       child: ListTile(
                         leading: Icon(Icons.calendar_today, color: Colors.blue),
-                        title: Text('Tanggal & Waktu'),
+                        title: Text('Tanggal'),
                         subtitle: Text(
-                          DateTime.now().toString().substring(0, 16),
+                          // Format tanggal agar rapi (Contoh: 24 Januari 2026)
+                          DateFormat(
+                            'dd MMMM yyyy',
+                            'id_ID',
+                          ).format(_selectedDate),
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
+                        trailing: Icon(
+                          Icons.arrow_drop_down,
+                        ), // Indikator bisa diklik
+                        onTap: _pickDate, // Panggil fungsi saat diklik
                       ),
                     ),
                     SizedBox(height: 16),

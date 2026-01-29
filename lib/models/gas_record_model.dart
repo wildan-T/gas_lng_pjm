@@ -10,19 +10,21 @@ class GasRecord {
   final String operatorName;
   final bool isVerified;
   final String? verifiedBy;
+  final String? verifiedByName;
   final DateTime? verifiedAt;
   final String? photoBase64; // ← NEW
 
   GasRecord({
     required this.id,
     required this.timestamp,
-    required this.amount,
+    required this.amount, 
     required this.machineName,
     this.notes,
     required this.operatorId,
     required this.operatorName,
     this.isVerified = false,
     this.verifiedBy,
+    this.verifiedByName,
     this.verifiedAt,
     this.photoBase64, // ← NEW
   });
@@ -37,6 +39,7 @@ class GasRecord {
       'operatorName': operatorName,
       'isVerified': isVerified,
       'verifiedBy': verifiedBy,
+      'verifiedByName': verifiedByName,
       'verifiedAt': verifiedAt != null ? Timestamp.fromDate(verifiedAt!) : null,
       'photoBase64': photoBase64, // ← NEW
     };
@@ -55,6 +58,7 @@ class GasRecord {
       operatorName: data['operatorName'] ?? 'Unknown',
       isVerified: data['isVerified'] ?? false,
       verifiedBy: data['verifiedBy'],
+      verifiedByName: data['verifiedByName'],
       verifiedAt: data['verifiedAt'] != null
           ? (data['verifiedAt'] as Timestamp).toDate()
           : null,

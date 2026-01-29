@@ -15,6 +15,7 @@ class ForecastInputScreen extends StatefulWidget {
 class _ForecastInputScreenState extends State<ForecastInputScreen> {
   final _formKey = GlobalKey<FormState>();
   final _productionController = TextEditingController();
+  final _actualController = TextEditingController();
   final _notesController = TextEditingController();
 
   DateTime _selectedDate = DateTime(
@@ -47,6 +48,16 @@ class _ForecastInputScreenState extends State<ForecastInputScreen> {
         _existingForecast = forecast;
         _productionController.text = forecast.forecastProduction
             .toStringAsFixed(0);
+
+        // NEW: Load data aktual jika ada
+        if (forecast.actualProduction != null) {
+          _actualController.text = forecast.actualProduction!.toStringAsFixed(
+            0,
+          );
+        } else {
+          _actualController.clear();
+        }
+
         _notesController.text = forecast.notes;
       });
     }
@@ -94,6 +105,9 @@ class _ForecastInputScreenState extends State<ForecastInputScreen> {
         year: _selectedDate.year,
         month: _selectedDate.month,
         forecastProduction: double.parse(_productionController.text),
+        actualProduction: _actualController.text.isNotEmpty
+            ? double.parse(_actualController.text)
+            : null,
         notes: _notesController.text.trim(),
         createdAt: DateTime.now(),
         // PERBAIKAN 2: Gunakan nama user asli
@@ -199,6 +213,41 @@ class _ForecastInputScreenState extends State<ForecastInputScreen> {
 
             SizedBox(height: 16),
 
+            Card(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Produksi Aktual / Realisasi',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    TextFormField(
+                      controller: _actualController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: 'Jumlah Unit (Pcs)',
+                        hintText: 'Contoh: 1800000',
+                        helperText: 'Isi jika bulan sudah berjalan',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.check_circle_outline),
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                      ),
+                      // Tidak perlu validator wajib, karena di awal bulan mungkin belum ada
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            SizedBox(height: 16),
+
             // Notes
             Card(
               child: Padding(
@@ -287,6 +336,7 @@ class _ForecastInputScreenState extends State<ForecastInputScreen> {
   @override
   void dispose() {
     _productionController.dispose();
+    _actualController.dispose();
     _notesController.dispose();
     super.dispose();
   }

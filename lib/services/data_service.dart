@@ -53,6 +53,7 @@ class DataService with ChangeNotifier {
       // Note: Pastikan membuat composite index di Firebase Console jika diminta
       QuerySnapshot snapshot = await _recordsRef
           .where('operatorId', isEqualTo: operatorId)
+          .where('isVerified', isEqualTo: false)
           .orderBy('timestamp', descending: true)
           .get();
 
@@ -87,6 +88,7 @@ class DataService with ChangeNotifier {
       await _recordsRef.doc(recordId).update({
         'isVerified': true,
         'verifiedBy': supervisorId,
+        'verifiedByName': supervisorName,
         'verifiedAt': Timestamp.now(),
       });
       notifyListeners();

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gas_lng_pjm/screens/operator/input_gas_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../models/gas_record_model.dart';
@@ -29,6 +30,20 @@ class _HistoryScreenState extends State<HistoryScreen> {
       _records = records;
       _isLoading = false;
     });
+  }
+
+  // Fungsi baru untuk menangani navigasi dan refresh
+  Future<void> _editRecord(GasRecord record) async {
+    // Tunggu sampai layar Input ditutup
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => InputGasScreen(recordToEdit: record),
+      ),
+    );
+
+    // SETELAH KEMBALI, LANGSUNG REFRESH DATA
+    _loadRecords();
   }
 
   Future<void> _deleteRecord(String recordId) async {
@@ -92,6 +107,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   return _RecordCard(
                     record: record,
                     onDelete: () => _deleteRecord(record.id),
+                    onEdit: () => _editRecord(record),
                   );
                 },
               ),
@@ -103,8 +119,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
 class _RecordCard extends StatelessWidget {
   final GasRecord record;
   final VoidCallback onDelete;
+  final VoidCallback onEdit;
 
-  _RecordCard({required this.record, required this.onDelete});
+  _RecordCard({
+    required this.record,
+    required this.onDelete,
+    required this.onEdit,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -178,14 +199,26 @@ class _RecordCard extends StatelessWidget {
               ),
             ],
             SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                onPressed: onDelete,
-                icon: Icon(Icons.delete, size: 18),
-                label: Text('Hapus'),
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
-              ),
+            // TOMBOL AKSI (EDIT & HAPUS)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                // TOMBOL EDIT BARU
+                TextButton.icon(
+                  onPressed: onEdit,
+                  icon: Icon(Icons.edit, size: 18, color: Colors.blue),
+                  label: Text('Edit', style: TextStyle(color: Colors.blue)),
+                ),
+
+                SizedBox(width: 8),
+
+                // TOMBOL HAPUS LAMA
+                TextButton.icon(
+                  onPressed: onDelete,
+                  icon: Icon(Icons.delete, size: 18, color: Colors.red),
+                  label: Text('Hapus', style: TextStyle(color: Colors.red)),
+                ),
+              ],
             ),
           ],
         ),

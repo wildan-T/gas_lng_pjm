@@ -10,7 +10,8 @@ import '../../services/auth_service.dart';
 import '../../services/data_service.dart';
 
 class InputGasScreen extends StatefulWidget {
-  const InputGasScreen({Key? key}) : super(key: key);
+  final GasRecord? recordToEdit;
+  const InputGasScreen({Key? key, this.recordToEdit}) : super(key: key);
 
   @override
   _InputGasScreenState createState() => _InputGasScreenState();
@@ -29,6 +30,9 @@ class _InputGasScreenState extends State<InputGasScreen> {
   String? _photoBase64; // ← NEW
   XFile? _imageFile; // ← NEW
   File? _displayImage; // Hanya untuk preview di layar
+
+  // Status apakah ini mode edit
+  bool get _isEditing => widget.recordToEdit != null;
 
   @override
   void initState() {
@@ -62,8 +66,31 @@ class _InputGasScreenState extends State<InputGasScreen> {
     setState(() {
       _machines = machines;
       _isLoadingMachines = false;
-      if (_machines.isNotEmpty) {
-        _selectedMachine = _machines[0];
+      // Logika Pengisian Data untuk Edit
+      if (_isEditing) {
+        final record = widget.recordToEdit!;
+
+        // 1. Isi Text Controller
+        _amountController.text = record.amount.toString();
+        _notesController.text = record.notes ?? '';
+
+        // 2. Pilih Mesin yang sesuai
+        try {
+          _selectedMachine = _machines.firstWhere(
+            (m) => m.name == record.machineName,
+          );
+        } catch (e) {
+          // Jika mesin sudah dihapus admin, pilih yang pertama atau null
+          if (_machines.isNotEmpty) _selectedMachine = _machines[0];
+        }
+
+        // 3. Load Foto Lama
+        if (record.photoBase64 != null) {
+          _photoBase64 = record.photoBase64;
+        }
+      } else {
+        // Mode Input Baru: Default mesin pertama
+        if (_machines.isNotEmpty) _selectedMachine = _machines[0];
       }
     });
   }
@@ -196,32 +223,48 @@ class _InputGasScreenState extends State<InputGasScreen> {
       final dataService = Provider.of<DataService>(context, listen: false);
 
       final record = GasRecord(
-        id: 'rec_${DateTime.now().millisecondsSinceEpoch}',
-        timestamp: DateTime(
-          _selectedDate.year,
-          _selectedDate.month,
-          _selectedDate.day,
-          DateTime.now().hour,
-          DateTime.now().minute,
-          DateTime.now().second,
-        ),
+        // Jika Edit: Pakai ID lama. Jika Baru: Buat ID baru
+        id: _isEditing
+            ? widget.recordToEdit!.id
+            : 'rec_${DateTime.now().millisecondsSinceEpoch}',
+        timestamp: _isEditing
+            ? widget.recordToEdit!.timestamp
+            : DateTime(
+                _selectedDate.year,
+                _selectedDate.month,
+                _selectedDate.day,
+                DateTime.now().hour,
+                DateTime.now().minute,
+                DateTime.now().second,
+              ),
         amount: double.parse(_amountController.text),
         machineName: _selectedMachine!.name,
         notes: _notesController.text.isEmpty ? null : _notesController.text,
         operatorId: user.uid,
         operatorName: user.name,
-        photoBase64: _photoBase64, // ← NEW
+        photoBase64: _photoBase64,
+        isVerified:
+            false, // Reset verifikasi jika diedit (supaya dicek ulang supervisor)
       );
 
-      await dataService.addGasRecord(record);
+      if (_isEditing) {
+        await dataService.updateGasRecord(record); // Panggil fungsi Update
+      } else {
+        await dataService.addGasRecord(record); // Panggil fungsi Add
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Data berhasil disimpan'),
+            content: Text(
+              _isEditing
+                  ? 'Data berhasil diperbarui'
+                  : 'Data berhasil disimpan',
+            ),
             backgroundColor: Colors.green,
           ),
         );
+        Navigator.pop(context); // Kembali ke layar sebelumnya
 
         _formKey.currentState!.reset();
         _amountController.clear();
@@ -247,7 +290,9 @@ class _InputGasScreenState extends State<InputGasScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Input Konsumsi Gas LNG')),
+      appBar: AppBar(
+        title: Text(_isEditing ? 'Edit Data Gas' : 'Input Konsumsi Gas'),
+      ),
       body: _isLoadingMachines
           ? Center(child: CircularProgressIndicator())
           : Padding(
@@ -374,25 +419,59 @@ class _InputGasScreenState extends State<InputGasScreen> {
                               ),
                             ),
                             SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: OutlinedButton.icon(
-                                    onPressed: _takePicture,
-                                    icon: Icon(Icons.camera),
-                                    label: Text('Ambil Foto'),
+                            if (_photoBase64 == null)
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: OutlinedButton.icon(
+                                      onPressed: _takePicture,
+                                      icon: Icon(Icons.camera),
+                                      label: Text('Foto'),
+                                    ),
                                   ),
-                                ),
-                                SizedBox(width: 8),
-                                Expanded(
-                                  child: OutlinedButton.icon(
-                                    onPressed: _pickFromGallery,
-                                    icon: Icon(Icons.photo_library),
-                                    label: Text('Dari Gallery'),
+                                  SizedBox(width: 8),
+                                  Expanded(
+                                    child: OutlinedButton.icon(
+                                      onPressed: _pickFromGallery,
+                                      icon: Icon(Icons.image),
+                                      label: Text('Galeri'),
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
+                                ],
+                              )
+                            else
+                              Stack(
+                                children: [
+                                  // Tampilkan gambar dari file (jika baru ambil) atau dari base64 (jika load data lama)
+                                  _displayImage != null
+                                      ? Image.file(
+                                          _displayImage!,
+                                          height: 200,
+                                          width: double.infinity,
+                                          fit: BoxFit.cover,
+                                        )
+                                      : Image.memory(
+                                          base64Decode(_photoBase64!),
+                                          height: 200,
+                                          width: double.infinity,
+                                          fit: BoxFit.cover,
+                                        ),
+                                  Positioned(
+                                    right: 8,
+                                    top: 8,
+                                    child: CircleAvatar(
+                                      backgroundColor: Colors.red,
+                                      child: IconButton(
+                                        icon: Icon(
+                                          Icons.close,
+                                          color: Colors.white,
+                                        ),
+                                        onPressed: _removePhoto,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                           ] else ...[
                             Stack(
                               children: [
@@ -458,7 +537,7 @@ class _InputGasScreenState extends State<InputGasScreen> {
                         child: _isLoading
                             ? CircularProgressIndicator(color: Colors.white)
                             : Text(
-                                'Simpan Data',
+                                _isEditing ? 'Update Data' : 'Simpan Data',
                                 style: TextStyle(fontSize: 16),
                               ),
                       ),

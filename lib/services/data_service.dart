@@ -64,6 +64,18 @@ class DataService with ChangeNotifier {
     }
   }
 
+  // Edit Record
+  Future<void> updateGasRecord(GasRecord record) async {
+    try {
+      // Pastikan menggunakan record.id yang sama
+      await _recordsRef.doc(record.id).update(record.toMap());
+      notifyListeners();
+    } catch (e) {
+      print('Error updating record: $e');
+      rethrow;
+    }
+  }
+
   // Read Unverified (Untuk Supervisor Verification)
   Future<List<GasRecord>> getUnverifiedRecords() async {
     try {

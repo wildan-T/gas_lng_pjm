@@ -285,15 +285,19 @@ class DataService with ChangeNotifier {
           .where('timestamp', isLessThanOrEqualTo: Timestamp.fromDate(end))
           .get();
 
-      List<GasRecord> records = snapshot.docs
+      List<GasRecord> allRecords = snapshot.docs
           .map((doc) => GasRecord.fromFirestore(doc))
+          .toList();
+
+      List<GasRecord> verifiedRecords = allRecords
+          .where((r) => r.isVerified)
           .toList();
 
       double totalUsage = 0;
       Map<int, double> dailyConsumption = {};
       Map<String, double> machineConsumption = {};
 
-      for (var record in records) {
+      for (var record in verifiedRecords) {
         totalUsage += record.amount;
 
         // Grouping per Hari (1-31)
@@ -319,7 +323,7 @@ class DataService with ChangeNotifier {
         'totalConsumption': totalUsage, // Sesuai key di UI
         'totalCost': totalUsage * currentPrice,
         'avgDaily': avgDaily,
-        'recordCount': records.length,
+        'recordCount': verifiedRecords.length,
         'dailyConsumption':
             dailyConsumption, // Map<int, double> untuk Grafik Garis
         'machineConsumption':
@@ -348,8 +352,12 @@ class DataService with ChangeNotifier {
         .where('timestamp', isLessThanOrEqualTo: Timestamp.fromDate(end))
         .get();
 
-    List<GasRecord> records = snapshot.docs
+    List<GasRecord> allRecords = snapshot.docs
         .map((doc) => GasRecord.fromFirestore(doc))
+        .toList();
+
+    List<GasRecord> verifiedRecords = allRecords
+        .where((r) => r.isVerified)
         .toList();
 
     // --- MULAI PERBAIKAN LOGIKA HITUNG ---
@@ -357,7 +365,7 @@ class DataService with ChangeNotifier {
     Map<String, double> machineConsumption =
         {}; // Definisikan tipe data eksplisit
 
-    for (var record in records) {
+    for (var record in verifiedRecords) {
       totalUsage += record.amount;
 
       // Hitung per mesin
@@ -385,8 +393,8 @@ class DataService with ChangeNotifier {
       'totalCost': totalCost, // Tambahkan ini
       'avgDaily': avgDaily, // Tambahkan ini
       'pricePerM3': pricePerM3, // Tambahkan ini
-      'recordCount': records.length, // Tambahkan ini
-      'records': records,
+      'recordCount': verifiedRecords.length, // Tambahkan ini
+      'records': verifiedRecords,
       'machineConsumption': machineConsumption, // <--- INI YANG PALING PENTING
     };
   }

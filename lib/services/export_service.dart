@@ -376,11 +376,12 @@ class ExportService {
                   pw.Table(
                     border: pw.TableBorder.all(color: PdfColors.grey300),
                     columnWidths: {
-                      0: pw.FixedColumnWidth(80),
-                      1: pw.FixedColumnWidth(120),
-                      2: pw.FixedColumnWidth(80),
-                      3: pw.FixedColumnWidth(100),
-                      4: pw.FixedColumnWidth(80),
+                      0: pw.FixedColumnWidth(70), // Tanggal
+                      1: pw.FixedColumnWidth(100), // Mesin
+                      2: pw.FixedColumnWidth(70), // Jumlah
+                      3: pw.FixedColumnWidth(80), // Operator
+                      4: pw.FixedColumnWidth(60), // Status
+                      5: pw.FixedColumnWidth(60), // Foto
                     },
                     children: [
                       // Header
@@ -400,10 +401,43 @@ class ExportService {
                             isHeader: true,
                             align: pw.TextAlign.center,
                           ),
+                          _buildTableCell(
+                            'Foto',
+                            isHeader: true,
+                            align: pw.TextAlign.center,
+                          ),
                         ],
                       ),
                       // Data
                       ...chunk.map((record) {
+                        pw.Widget photoWidget;
+                        if (record.photoBase64 != null &&
+                            record.photoBase64!.isNotEmpty) {
+                          try {
+                            final imageBytes = base64Decode(
+                              record.photoBase64!,
+                            );
+                            photoWidget = pw.Container(
+                              height: 40,
+                              width: 40,
+                              child: pw.Image(
+                                pw.MemoryImage(imageBytes),
+                                fit: pw.BoxFit.cover,
+                              ),
+                            );
+                          } catch (e) {
+                            photoWidget = pw.Text(
+                              'Err',
+                              style: pw.TextStyle(fontSize: 8),
+                            );
+                          }
+                        } else {
+                          photoWidget = pw.Text(
+                            '-',
+                            style: pw.TextStyle(fontSize: 10),
+                          );
+                        }
+
                         return pw.TableRow(
                           children: [
                             _buildTableCell(
@@ -421,6 +455,10 @@ class ExportService {
                             _buildTableCell(
                               record.isVerified ? 'Verified' : 'Pending',
                               align: pw.TextAlign.center,
+                            ),
+                            pw.Padding(
+                              padding: pw.EdgeInsets.all(4),
+                              child: pw.Center(child: photoWidget),
                             ),
                           ],
                         );
@@ -708,8 +746,13 @@ class ExportService {
     detailSheet.getRangeByName('D$row').setText('Operator');
     detailSheet.getRangeByName('E$row').setText('Status');
     detailSheet.getRangeByName('F$row').setText('Catatan');
-    detailSheet.getRangeByName('A$row:F$row').cellStyle.bold = true;
-    detailSheet.getRangeByName('A$row:F$row').cellStyle.backColor = '#D9E1F2';
+    detailSheet.getRangeByName('G$row').setText('Foto');
+
+    // Style Header
+    final headerRange = detailSheet.getRangeByName('A$row:G$row');
+    headerRange.cellStyle.bold = true;
+    headerRange.cellStyle.backColor = '#D9E1F2';
+    row++;
     row++;
 
     // Data
@@ -724,10 +767,42 @@ class ExportService {
           .getRangeByName('E$row')
           .setText(record.isVerified ? 'Verified' : 'Pending');
       detailSheet.getRangeByName('F$row').setText(record.notes ?? '-');
+      if (record.photoBase64 != null && record.photoBase64!.isNotEmpty) {
+        try {
+          List<int> bytes = base64Decode(record.photoBase64!);
+
+          // Masukkan gambar ke Kolom G (Index 7)
+          // addStream(Row, Column, Bytes)
+          final xlsio.Picture picture = detailSheet.pictures.addStream(
+            row,
+            7,
+            bytes,
+          );
+
+          // Atur Ukuran Gambar (Kecil saja biar rapi)
+          picture.height = 60;
+          picture.width = 60;
+
+          // PENTING: Atur tinggi baris agar gambar muat & tidak menumpuk
+          detailSheet.setRowHeightInPixels(
+            row,
+            70,
+          ); // Sedikit lebih besar dari gambar
+        } catch (e) {
+          detailSheet.getRangeByName('G$row').setText('Error Foto');
+        }
+      } else {
+        detailSheet.getRangeByName('G$row').setText('-');
+        // Reset tinggi baris ke default jika tidak ada foto
+        detailSheet.setRowHeightInPixels(row, 20);
+      }
       row++;
     }
 
+    // AutoFit Kolom Teks (Hindari kolom Foto G agar tidak error layout)
     detailSheet.getRangeByName('A1:F$row').autoFitColumns();
+    // Set lebar kolom Foto manual biar rapi
+    detailSheet.getRangeByName('G1').columnWidth = 15;
 
     // Save Excel
     final List<int> bytes = workbook.saveAsStream();

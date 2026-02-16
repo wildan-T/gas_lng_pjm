@@ -213,6 +213,8 @@ class _ManageRecordsScreenState extends State<ManageRecordsScreen> {
                               _verifyRecord(_filteredRecords[index]),
                           onDelete: () =>
                               _deleteRecord(_filteredRecords[index]),
+                          onReject: () =>
+                              _rejectRecord(_filteredRecords[index]),
                         );
                       },
                     ),
@@ -248,17 +250,81 @@ class _ManageRecordsScreenState extends State<ManageRecordsScreen> {
       },
     );
   }
+
+  Future<void> _rejectRecord(GasRecord record) async {
+    final reasonController = TextEditingController();
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Tolak Data & Minta Revisi'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Operator akan diminta untuk memperbaiki data ini. Masukkan alasannya:',
+            ),
+            SizedBox(height: 16),
+            TextField(
+              controller: reasonController,
+              decoration: InputDecoration(
+                labelText: 'Alasan Penolakan',
+                hintText: 'Contoh: Foto buram, angka tidak sesuai',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 2,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('Batal'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () {
+              if (reasonController.text.isNotEmpty) {
+                Navigator.pop(context, true);
+              }
+            },
+            child: Text('Kirim Revisi', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await Provider.of<DataService>(
+          context,
+          listen: false,
+        ).rejectRecord(record.id, reasonController.text);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Status dikembalikan ke Operator untuk revisi'),
+          ),
+        );
+        _loadRecords();
+      } catch (e) {
+        // Handle error
+      }
+    }
+  }
 }
 
 class _RecordCard extends StatelessWidget {
   final GasRecord record;
   final VoidCallback onVerify;
   final VoidCallback onDelete;
+  final VoidCallback onReject;
 
   _RecordCard({
     required this.record,
     required this.onVerify,
     required this.onDelete,
+    required this.onReject,
   });
 
   @override
@@ -419,19 +485,43 @@ class _RecordCard extends StatelessWidget {
                   SizedBox(height: 16),
                 ],
 
-                // Action Button (Hanya jika belum verified)
+                // Action Buttons (Hanya jika belum verified)
                 if (!record.isVerified)
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: onVerify,
-                      icon: Icon(Icons.verified_user),
-                      label: Text('Verifikasi Sekarang'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
+                  Column(
+                    children: [
+                      // Tombol Verifikasi (Hijau)
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: onVerify,
+                          icon: Icon(Icons.check_circle, color: Colors.white),
+                          label: Text(
+                            'Verifikasi Data',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                          ),
+                        ),
                       ),
-                    ),
+                      SizedBox(height: 8),
+
+                      // Tombol Tolak (Merah/Orange) - BARU
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: onReject, // Panggil fungsi dialog
+                          icon: Icon(Icons.cancel, color: Colors.red),
+                          label: Text(
+                            'Tolak / Minta Revisi',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: Colors.red),
+                          ),
+                        ),
+                      ),
+                    ],
                   )
                 else
                   // Info Verifikator jika sudah verified

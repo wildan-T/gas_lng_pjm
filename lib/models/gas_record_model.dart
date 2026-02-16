@@ -12,12 +12,13 @@ class GasRecord {
   final String? verifiedBy;
   final String? verifiedByName;
   final DateTime? verifiedAt;
-  final String? photoBase64; // ← NEW
+  final String? photoBase64;
+  final String? rejectionReason;
 
   GasRecord({
     required this.id,
     required this.timestamp,
-    required this.amount, 
+    required this.amount,
     required this.machineName,
     this.notes,
     required this.operatorId,
@@ -26,7 +27,8 @@ class GasRecord {
     this.verifiedBy,
     this.verifiedByName,
     this.verifiedAt,
-    this.photoBase64, // ← NEW
+    this.photoBase64,
+    this.rejectionReason,
   });
 
   Map<String, dynamic> toMap() {
@@ -41,7 +43,8 @@ class GasRecord {
       'verifiedBy': verifiedBy,
       'verifiedByName': verifiedByName,
       'verifiedAt': verifiedAt != null ? Timestamp.fromDate(verifiedAt!) : null,
-      'photoBase64': photoBase64, // ← NEW
+      'photoBase64': photoBase64,
+      'rejectionReason': rejectionReason,
     };
   }
 
@@ -63,6 +66,7 @@ class GasRecord {
           ? (data['verifiedAt'] as Timestamp).toDate()
           : null,
       photoBase64: data['photoBase64'],
+      rejectionReason: data['rejectionReason'],
     );
   }
 }

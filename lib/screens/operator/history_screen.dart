@@ -146,11 +146,23 @@ class _RecordCard extends StatelessWidget {
                   dateFormat.format(record.timestamp),
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
-                Chip(
-                  label: Text('Pending'),
-                  backgroundColor: Colors.orange.shade100,
-                  labelStyle: TextStyle(color: Colors.orange.shade900),
-                ),
+                if (record.isVerified)
+                  Chip(
+                    label: Text('Verified'),
+                    backgroundColor: Colors.green.shade100,
+                  )
+                else if (record.rejectionReason !=
+                    null) // Jika ada alasan tolak
+                  Chip(
+                    label: Text('Perlu Revisi'),
+                    backgroundColor: Colors.red.shade100,
+                    labelStyle: TextStyle(color: Colors.red[900]),
+                  )
+                else
+                  Chip(
+                    label: Text('Pending'),
+                    backgroundColor: Colors.orange.shade100,
+                  ),
               ],
             ),
             SizedBox(height: 8),
@@ -198,6 +210,32 @@ class _RecordCard extends StatelessWidget {
                 ),
               ),
             ],
+            // ALASAN PENOLAKAN
+            if (record.rejectionReason != null)
+              Container(
+                margin: EdgeInsets.symmetric(vertical: 8),
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  border: Border.all(color: Colors.red.shade200),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.warning_amber_rounded, color: Colors.red),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Revisi: ${record.rejectionReason}',
+                        style: TextStyle(
+                          color: Colors.red[900],
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             SizedBox(height: 8),
             // TOMBOL AKSI (EDIT & HAPUS)
             Row(

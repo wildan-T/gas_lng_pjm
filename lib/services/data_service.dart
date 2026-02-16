@@ -67,8 +67,12 @@ class DataService with ChangeNotifier {
   // Edit Record
   Future<void> updateGasRecord(GasRecord record) async {
     try {
+      // Saat operator update, pastikan rejectionReason DIHAPUS agar status kembali bersih (Pending)
+      var data = record.toMap();
+      data['rejectionReason'] = null; // Hapus catatan penolakan
+      data['isVerified'] = false;
       // Pastikan menggunakan record.id yang sama
-      await _recordsRef.doc(record.id).update(record.toMap());
+      await _recordsRef.doc(record.id).update(data);
       notifyListeners();
     } catch (e) {
       print('Error updating record: $e');
@@ -106,6 +110,21 @@ class DataService with ChangeNotifier {
       notifyListeners();
     } catch (e) {
       print('Error verifying: $e');
+      rethrow;
+    }
+  }
+
+  // Reject Record (Supervisor)
+  Future<void> rejectRecord(String recordId, String reason) async {
+    try {
+      await _recordsRef.doc(recordId).update({
+        'isVerified': false, // Tetap false karena belum verified
+        'rejectionReason': reason, // Simpan alasan
+        // Opsional: 'status': 'rejected' jika Anda pakai enum status
+      });
+      notifyListeners();
+    } catch (e) {
+      print('Error rejecting record: $e');
       rethrow;
     }
   }
